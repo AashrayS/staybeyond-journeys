@@ -9,7 +9,228 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
-      [_ in never]: never
+      bookings: {
+        Row: {
+          created_at: string | null
+          end_date: string
+          guests: number
+          id: string
+          property_id: string
+          start_date: string
+          status: string | null
+          total_price: number
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          end_date: string
+          guests: number
+          id?: string
+          property_id: string
+          start_date: string
+          status?: string | null
+          total_price: number
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          end_date?: string
+          guests?: number
+          id?: string
+          property_id?: string
+          start_date?: string
+          status?: string | null
+          total_price?: number
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "bookings_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "properties"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      profiles: {
+        Row: {
+          avatar_url: string | null
+          email: string | null
+          id: string
+          is_host: boolean | null
+          joined_at: string | null
+          name: string | null
+          phone: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          avatar_url?: string | null
+          email?: string | null
+          id: string
+          is_host?: boolean | null
+          joined_at?: string | null
+          name?: string | null
+          phone?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          avatar_url?: string | null
+          email?: string | null
+          id?: string
+          is_host?: boolean | null
+          joined_at?: string | null
+          name?: string | null
+          phone?: string | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      properties: {
+        Row: {
+          amenities: string[] | null
+          bathrooms: number
+          bedrooms: number
+          capacity: number
+          created_at: string | null
+          currency: string | null
+          description: string
+          featured: boolean | null
+          host_id: string
+          id: string
+          images: string[] | null
+          location: Json
+          price: number
+          property_type: string
+          rating: number | null
+          title: string
+          updated_at: string | null
+        }
+        Insert: {
+          amenities?: string[] | null
+          bathrooms: number
+          bedrooms: number
+          capacity: number
+          created_at?: string | null
+          currency?: string | null
+          description: string
+          featured?: boolean | null
+          host_id: string
+          id?: string
+          images?: string[] | null
+          location: Json
+          price: number
+          property_type: string
+          rating?: number | null
+          title: string
+          updated_at?: string | null
+        }
+        Update: {
+          amenities?: string[] | null
+          bathrooms?: number
+          bedrooms?: number
+          capacity?: number
+          created_at?: string | null
+          currency?: string | null
+          description?: string
+          featured?: boolean | null
+          host_id?: string
+          id?: string
+          images?: string[] | null
+          location?: Json
+          price?: number
+          property_type?: string
+          rating?: number | null
+          title?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      reviews: {
+        Row: {
+          comment: string | null
+          date: string | null
+          id: string
+          property_id: string
+          rating: number
+          user_id: string
+        }
+        Insert: {
+          comment?: string | null
+          date?: string | null
+          id?: string
+          property_id: string
+          rating: number
+          user_id: string
+        }
+        Update: {
+          comment?: string | null
+          date?: string | null
+          id?: string
+          property_id?: string
+          rating?: number
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "reviews_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "properties"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      transportation: {
+        Row: {
+          booking_id: string | null
+          created_at: string | null
+          dropoff_location: string
+          estimated_price: number
+          id: string
+          pickup_location: string
+          pickup_time: string
+          status: string | null
+          type: string
+          updated_at: string | null
+        }
+        Insert: {
+          booking_id?: string | null
+          created_at?: string | null
+          dropoff_location: string
+          estimated_price: number
+          id?: string
+          pickup_location: string
+          pickup_time: string
+          status?: string | null
+          type: string
+          updated_at?: string | null
+        }
+        Update: {
+          booking_id?: string | null
+          created_at?: string | null
+          dropoff_location?: string
+          estimated_price?: number
+          id?: string
+          pickup_location?: string
+          pickup_time?: string
+          status?: string | null
+          type?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "transportation_booking_id_fkey"
+            columns: ["booking_id"]
+            isOneToOne: false
+            referencedRelation: "bookings"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
