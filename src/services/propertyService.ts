@@ -128,7 +128,8 @@ export const fetchAllProperties = async (filters?: SearchFilters): Promise<Prope
         query = query.eq("property_type", filters.propertyType);
       }
 
-      if (filters.bedrooms) {
+      // Only apply bedrooms filter if it's defined
+      if (filters.bedrooms !== undefined) {
         query = query.gte("bedrooms", filters.bedrooms);
       }
     }

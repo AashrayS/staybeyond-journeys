@@ -1,4 +1,3 @@
-
 export interface Property {
   id: string;
   title: string;
@@ -106,4 +105,5 @@ export interface SearchFilters {
   };
   propertyType?: string;
   amenities?: string[];
+  bedrooms?: number; // Added the bedrooms property as optional
 }
