@@ -1,7 +1,81 @@
 
 import { supabase } from "@/integrations/supabase/client";
 import { Property, Booking, Review } from "@/types";
+import { Property as SupabaseProperty, Review as SupabaseReview, Booking as SupabaseBooking } from "@/types/supabase";
 import { indianProperties } from "@/data/indianData";
+
+// Helper function to map Supabase property to app property
+const mapSupabasePropertyToAppProperty = (supaProperty: SupabaseProperty): Property => {
+  return {
+    id: supaProperty.id,
+    title: supaProperty.title,
+    description: supaProperty.description,
+    location: supaProperty.location,
+    price: supaProperty.price,
+    currency: supaProperty.currency,
+    images: supaProperty.images,
+    amenities: supaProperty.amenities,
+    host_id: supaProperty.host_id,
+    host: { 
+      id: supaProperty.host_id,
+      name: "Host",
+      avatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=60",
+      isHost: true,
+      joined: new Date().toISOString(),
+    },
+    rating: supaProperty.rating,
+    reviews: [],
+    bedrooms: supaProperty.bedrooms,
+    bathrooms: supaProperty.bathrooms,
+    capacity: supaProperty.capacity,
+    property_type: supaProperty.property_type,
+    propertyType: supaProperty.property_type,
+    featured: supaProperty.featured,
+    created_at: supaProperty.created_at,
+    updated_at: supaProperty.updated_at
+  };
+};
+
+// Helper function to map Supabase review to app review
+const mapSupabaseReviewToAppReview = (supaReview: any): Review => {
+  return {
+    id: supaReview.id,
+    property_id: supaReview.property_id,
+    propertyId: supaReview.property_id,
+    user_id: supaReview.user_id,
+    userId: supaReview.user_id,
+    user: {
+      name: supaReview.profiles?.name || supaReview.user?.name || "Anonymous",
+      avatar: supaReview.profiles?.avatar_url || supaReview.user?.avatar || "",
+    },
+    rating: supaReview.rating,
+    comment: supaReview.comment || "",
+    date: supaReview.date,
+  };
+};
+
+// Helper function to map Supabase booking to app booking
+const mapSupabaseBookingToAppBooking = (supaBooking: any, property?: any): Booking => {
+  return {
+    id: supaBooking.id,
+    property_id: supaBooking.property_id,
+    propertyId: supaBooking.property_id,
+    property: property ? mapSupabasePropertyToAppProperty(property) : {} as Property,
+    user_id: supaBooking.user_id,
+    userId: supaBooking.user_id,
+    user: {} as any, // This would be filled in a real scenario
+    start_date: supaBooking.start_date,
+    startDate: supaBooking.start_date,
+    end_date: supaBooking.end_date,
+    endDate: supaBooking.end_date,
+    totalPrice: supaBooking.total_price,
+    status: supaBooking.status as any,
+    guests: supaBooking.guests,
+    created_at: supaBooking.created_at,
+    createdAt: supaBooking.created_at,
+    transportation: supaBooking.transportation,
+  };
+};
 
 export const fetchFeaturedProperties = async (): Promise<Property[]> => {
   try {
@@ -18,7 +92,7 @@ export const fetchFeaturedProperties = async (): Promise<Property[]> => {
     }
 
     if (data && data.length > 0) {
-      return data as Property[];
+      return data.map(prop => mapSupabasePropertyToAppProperty(prop as SupabaseProperty));
     } else {
       // Return mock data if no featured properties in database yet
       return indianProperties.filter(prop => prop.featured);
@@ -66,7 +140,7 @@ export const fetchAllProperties = async (filters?: any): Promise<Property[]> => 
     }
 
     if (data && data.length > 0) {
-      return data as Property[];
+      return data.map(prop => mapSupabasePropertyToAppProperty(prop as SupabaseProperty));
     } else {
       // Return mock data if no properties in database yet
       return indianProperties;
@@ -95,17 +169,15 @@ export const fetchPropertyById = async (id: string): Promise<Property | null> =>
     }
 
     if (data) {
-      const property = data as Property & { reviews: Review[] };
-      return {
-        ...property,
-        host: { 
-          id: property.host_id,
-          name: "Host",
-          avatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=60",
-          isHost: true,
-          joined: new Date().toISOString(),
-        }
-      };
+      const supaProperty = data as any;
+      const appProperty = mapSupabasePropertyToAppProperty(supaProperty);
+      
+      // Add reviews if any
+      if (supaProperty.reviews && Array.isArray(supaProperty.reviews)) {
+        appProperty.reviews = supaProperty.reviews.map((rev: any) => mapSupabaseReviewToAppReview(rev));
+      }
+      
+      return appProperty;
     } else {
       // Return mock data if property not found
       return indianProperties.find(prop => prop.id === id) || null;
@@ -133,13 +205,7 @@ export const fetchPropertyReviews = async (propertyId: string): Promise<Review[]
     }
 
     if (data) {
-      return data.map(review => ({
-        ...review,
-        user: {
-          name: review.profiles?.name || "Anonymous",
-          avatar: review.profiles?.avatar_url || "",
-        }
-      })) as Review[];
+      return data.map(review => mapSupabaseReviewToAppReview(review));
     } else {
       return [];
     }
@@ -151,9 +217,20 @@ export const fetchPropertyReviews = async (propertyId: string): Promise<Review[]
 
 export const createBooking = async (bookingData: Partial<Booking>): Promise<Booking | null> => {
   try {
+    // Convert from app format to Supabase format
+    const supabaseBookingData = {
+      property_id: bookingData.propertyId || bookingData.property_id,
+      user_id: bookingData.userId || bookingData.user_id,
+      start_date: bookingData.startDate || bookingData.start_date,
+      end_date: bookingData.endDate || bookingData.end_date,
+      total_price: bookingData.totalPrice,
+      status: bookingData.status,
+      guests: bookingData.guests
+    };
+
     const { data, error } = await supabase
       .from("bookings")
-      .insert(bookingData)
+      .insert(supabaseBookingData)
       .select()
       .single();
 
@@ -162,7 +239,7 @@ export const createBooking = async (bookingData: Partial<Booking>): Promise<Book
       return null;
     }
 
-    return data as Booking;
+    return mapSupabaseBookingToAppBooking(data);
   } catch (error) {
     console.error("Exception creating booking:", error);
     return null;
@@ -184,7 +261,9 @@ export const fetchUserBookings = async (userId: string): Promise<Booking[]> => {
       return [];
     }
 
-    return data as Booking[];
+    return data.map(booking => 
+      mapSupabaseBookingToAppBooking(booking, booking.property)
+    );
   } catch (error) {
     console.error("Exception fetching user bookings:", error);
     return [];
@@ -193,9 +272,18 @@ export const fetchUserBookings = async (userId: string): Promise<Booking[]> => {
 
 export const createReview = async (reviewData: Partial<Review>): Promise<Review | null> => {
   try {
+    // Convert from app format to Supabase format
+    const supabaseReviewData = {
+      property_id: reviewData.propertyId || reviewData.property_id,
+      user_id: reviewData.userId || reviewData.user_id,
+      rating: reviewData.rating,
+      comment: reviewData.comment,
+      date: new Date().toISOString()
+    };
+
     const { data, error } = await supabase
       .from("reviews")
-      .insert(reviewData)
+      .insert(supabaseReviewData)
       .select()
       .single();
 
@@ -204,7 +292,7 @@ export const createReview = async (reviewData: Partial<Review>): Promise<Review 
       return null;
     }
 
-    return data as Review;
+    return mapSupabaseReviewToAppReview(data);
   } catch (error) {
     console.error("Exception creating review:", error);
     return null;
