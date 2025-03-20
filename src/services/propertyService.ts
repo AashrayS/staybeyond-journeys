@@ -1,20 +1,18 @@
-
 import { supabase } from "@/integrations/supabase/client";
-import { Property, Booking, Review } from "@/types";
-import { Property as SupabaseProperty, Review as SupabaseReview, Booking as SupabaseBooking } from "@/types/supabase";
+import { Property, Booking, Review, SearchFilters } from "@/types";
 import { indianProperties } from "@/data/indianData";
 
 // Helper function to map Supabase property to app property
-const mapSupabasePropertyToAppProperty = (supaProperty: SupabaseProperty): Property => {
+const mapSupabasePropertyToAppProperty = (supaProperty: any): Property => {
   return {
     id: supaProperty.id,
     title: supaProperty.title,
     description: supaProperty.description,
     location: supaProperty.location,
     price: supaProperty.price,
-    currency: supaProperty.currency,
-    images: supaProperty.images,
-    amenities: supaProperty.amenities,
+    currency: supaProperty.currency || "INR",
+    images: supaProperty.images || [],
+    amenities: supaProperty.amenities || [],
     host_id: supaProperty.host_id,
     host: { 
       id: supaProperty.host_id,
@@ -23,14 +21,14 @@ const mapSupabasePropertyToAppProperty = (supaProperty: SupabaseProperty): Prope
       isHost: true,
       joined: new Date().toISOString(),
     },
-    rating: supaProperty.rating,
+    rating: supaProperty.rating || 4.5,
     reviews: [],
     bedrooms: supaProperty.bedrooms,
     bathrooms: supaProperty.bathrooms,
     capacity: supaProperty.capacity,
     property_type: supaProperty.property_type,
     propertyType: supaProperty.property_type,
-    featured: supaProperty.featured,
+    featured: supaProperty.featured || false,
     created_at: supaProperty.created_at,
     updated_at: supaProperty.updated_at
   };
@@ -46,7 +44,7 @@ const mapSupabaseReviewToAppReview = (supaReview: any): Review => {
     userId: supaReview.user_id,
     user: {
       name: supaReview.profiles?.name || supaReview.user?.name || "Anonymous",
-      avatar: supaReview.profiles?.avatar_url || supaReview.user?.avatar || "",
+      avatar: supaReview.profiles?.avatar_url || supaReview.user?.avatar || "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=60",
     },
     rating: supaReview.rating,
     comment: supaReview.comment || "",
@@ -79,6 +77,7 @@ const mapSupabaseBookingToAppBooking = (supaBooking: any, property?: any): Booki
 
 export const fetchFeaturedProperties = async (): Promise<Property[]> => {
   try {
+    console.log("Fetching featured properties from Supabase...");
     const { data, error } = await supabase
       .from("properties")
       .select("*")
@@ -92,8 +91,10 @@ export const fetchFeaturedProperties = async (): Promise<Property[]> => {
     }
 
     if (data && data.length > 0) {
-      return data.map(prop => mapSupabasePropertyToAppProperty(prop as SupabaseProperty));
+      console.log("Featured properties fetched successfully:", data.length);
+      return data.map(prop => mapSupabasePropertyToAppProperty(prop));
     } else {
+      console.log("No featured properties found, using mock data");
       // Return mock data if no featured properties in database yet
       return indianProperties.filter(prop => prop.featured);
     }
@@ -103,8 +104,9 @@ export const fetchFeaturedProperties = async (): Promise<Property[]> => {
   }
 };
 
-export const fetchAllProperties = async (filters?: any): Promise<Property[]> => {
+export const fetchAllProperties = async (filters?: SearchFilters): Promise<Property[]> => {
   try {
+    console.log("Fetching all properties from Supabase with filters:", filters);
     let query = supabase.from("properties").select("*");
 
     // Apply filters if provided
@@ -140,8 +142,10 @@ export const fetchAllProperties = async (filters?: any): Promise<Property[]> => 
     }
 
     if (data && data.length > 0) {
-      return data.map(prop => mapSupabasePropertyToAppProperty(prop as SupabaseProperty));
+      console.log("All properties fetched successfully:", data.length);
+      return data.map(prop => mapSupabasePropertyToAppProperty(prop));
     } else {
+      console.log("No properties found, using mock data");
       // Return mock data if no properties in database yet
       return indianProperties;
     }

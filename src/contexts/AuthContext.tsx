@@ -33,6 +33,34 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const navigate = useNavigate();
 
   useEffect(() => {
+    // Set up auth state listener FIRST
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      async (event, session) => {
+        console.log("Auth state changed:", event, session?.user?.id);
+        setSession(session);
+        setUser(session?.user ?? null);
+
+        if (session?.user) {
+          const { data, error } = await supabase
+            .from("profiles")
+            .select("*")
+            .eq("id", session.user.id)
+            .single();
+
+          if (error) {
+            console.error("Error fetching profile:", error);
+          } else {
+            setProfile(data);
+            setIsHost(data.is_host);
+          }
+        } else {
+          setProfile(null);
+          setIsHost(false);
+        }
+      }
+    );
+
+    // THEN check for existing session
     const getSession = async () => {
       try {
         setLoading(true);
@@ -62,31 +90,6 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     };
 
     getSession();
-
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (event, session) => {
-        setSession(session);
-        setUser(session?.user ?? null);
-
-        if (session?.user) {
-          const { data, error } = await supabase
-            .from("profiles")
-            .select("*")
-            .eq("id", session.user.id)
-            .single();
-
-          if (error) {
-            console.error("Error fetching profile:", error);
-          } else {
-            setProfile(data);
-            setIsHost(data.is_host);
-          }
-        } else {
-          setProfile(null);
-          setIsHost(false);
-        }
-      }
-    );
 
     return () => {
       subscription.unsubscribe();
@@ -158,6 +161,9 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       setError(null);
       const { error } = await supabase.auth.signInWithOAuth({
         provider: "google",
+        options: {
+          redirectTo: window.location.origin,
+        }
       });
 
       if (error) {
@@ -208,6 +214,10 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       setProfile(null);
       setSession(null);
       navigate("/");
+      toast({
+        title: "Signed out",
+        description: "You've been successfully signed out.",
+      });
     } catch (error: any) {
       toast({
         title: "Error signing out",

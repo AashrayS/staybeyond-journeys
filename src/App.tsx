@@ -3,7 +3,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider } from "@/contexts/AuthContext";
 import Index from "./pages/Index";
 import PropertyListing from "./pages/PropertyListing";
@@ -12,8 +12,19 @@ import TransportPage from "./pages/TransportPage";
 import NotFound from "./pages/NotFound";
 import Auth from "./pages/Auth";
 import AddProperty from "./pages/AddProperty";
+import { useAuth } from "./contexts/AuthContext";
 
 const queryClient = new QueryClient();
+
+// Protected route component
+const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
+  const { user, loading } = useAuth();
+  
+  if (loading) return <div className="flex justify-center items-center h-screen">Loading...</div>;
+  if (!user) return <Navigate to="/auth" replace />;
+  
+  return <>{children}</>;
+};
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
@@ -28,7 +39,11 @@ const App = () => (
             <Route path="/properties/:id" element={<PropertyDetail />} />
             <Route path="/transport" element={<TransportPage />} />
             <Route path="/auth" element={<Auth />} />
-            <Route path="/add-property" element={<AddProperty />} />
+            <Route path="/add-property" element={
+              <ProtectedRoute>
+                <AddProperty />
+              </ProtectedRoute>
+            } />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </TooltipProvider>

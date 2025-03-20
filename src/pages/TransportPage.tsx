@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import Header from "../components/Header";
 import Footer from "../components/Footer";
@@ -40,6 +39,9 @@ import {
 import { cn } from "@/lib/utils";
 import { format } from "date-fns";
 import { transportationOptions } from "../data/mockData";
+import { useAuth } from "@/contexts/AuthContext";
+import { useNavigate } from "react-router-dom";
+import { useToast } from "@/components/ui/use-toast";
 
 const TransportPage = () => {
   const [pickup, setPickup] = useState("");
@@ -50,6 +52,9 @@ const TransportPage = () => {
   const [bookingDialogOpen, setBookingDialogOpen] = useState(false);
   const [selectedTransport, setSelectedTransport] = useState<any>(null);
   const [confirmationDialogOpen, setConfirmationDialogOpen] = useState(false);
+  const { user } = useAuth();
+  const navigate = useNavigate();
+  const { toast } = useToast();
   
   useEffect(() => {
     // Scroll to top when component mounts
@@ -67,6 +72,16 @@ const TransportPage = () => {
   };
 
   const handleBookTransport = (transport: any) => {
+    if (!user) {
+      toast({
+        title: "Authentication required",
+        description: "Please login to book transportation",
+        variant: "destructive",
+      });
+      navigate("/auth");
+      return;
+    }
+    
     setSelectedTransport(transport);
     setBookingDialogOpen(true);
   };
@@ -76,12 +91,18 @@ const TransportPage = () => {
     setConfirmationDialogOpen(true);
   };
 
+  const fixedTransportOptions = transportationOptions.map(option => ({
+    ...option,
+    image: option.image.startsWith('http') 
+      ? option.image 
+      : `https://images.unsplash.com/photo-${option.image.split('photo-')[1] || '1596294781124-4d1c28298987'}`
+  }));
+
   return (
     <div className="min-h-screen flex flex-col">
       <Header />
       <main className="flex-grow pt-24 pb-16 px-4">
         <div className="container mx-auto max-w-7xl">
-          {/* Hero Section */}
           <div className="mb-10 text-center animate-fade-in">
             <h1 className="text-3xl md:text-4xl font-bold mb-4">Book Your Transportation</h1>
             <p className="text-muted-foreground max-w-2xl mx-auto">
@@ -89,11 +110,9 @@ const TransportPage = () => {
             </p>
           </div>
           
-          {/* Search Card */}
           <Card className="max-w-4xl mx-auto mb-12 animate-scale-in shadow-lg overflow-hidden">
             <CardContent className="p-6">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                {/* Pickup */}
                 <div className="space-y-2">
                   <label className="text-sm font-medium">Pickup Location</label>
                   <div className="relative">
@@ -107,7 +126,6 @@ const TransportPage = () => {
                   </div>
                 </div>
                 
-                {/* Dropoff */}
                 <div className="space-y-2">
                   <label className="text-sm font-medium">Dropoff Location</label>
                   <div className="relative">
@@ -121,7 +139,6 @@ const TransportPage = () => {
                   </div>
                 </div>
                 
-                {/* Date */}
                 <div className="space-y-2">
                   <label className="text-sm font-medium">Date</label>
                   <Popover>
@@ -149,7 +166,6 @@ const TransportPage = () => {
                   </Popover>
                 </div>
                 
-                {/* Time */}
                 <div className="space-y-2">
                   <label className="text-sm font-medium">Time</label>
                   <Select value={time} onValueChange={setTime}>
@@ -176,11 +192,10 @@ const TransportPage = () => {
             </CardContent>
           </Card>
           
-          {/* Available Options */}
           <div className="mb-12">
             <h2 className="text-2xl font-bold mb-6 animate-fade-in">Available Transportation Options</h2>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {transportationOptions.map((option, index) => (
+              {fixedTransportOptions.map((option, index) => (
                 <Card 
                   key={option.id}
                   className="overflow-hidden hover-lift animate-fade-up opacity-0"
@@ -203,7 +218,7 @@ const TransportPage = () => {
                     <p className="text-sm text-muted-foreground mb-4">{option.description}</p>
                     <div className="flex items-center justify-between">
                       <div>
-                        <span className="font-semibold">${option.basePrice}</span>
+                        <span className="font-semibold">₹{option.basePrice}</span>
                         <span className="text-sm text-muted-foreground"> base fare</span>
                       </div>
                       <Button onClick={() => handleBookTransport(option)}>
@@ -216,7 +231,6 @@ const TransportPage = () => {
             </div>
           </div>
           
-          {/* Transport Features */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 md:gap-8 mb-12">
             <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-sm animate-fade-up opacity-0" style={{ animationDelay: "100ms", animationFillMode: "forwards" }}>
               <div className="h-12 w-12 rounded-full bg-primary/10 text-primary flex items-center justify-center mb-4">
@@ -251,7 +265,6 @@ const TransportPage = () => {
         </div>
       </main>
       
-      {/* Booking Dialog */}
       {selectedTransport && (
         <Dialog open={bookingDialogOpen} onOpenChange={setBookingDialogOpen}>
           <DialogContent className="max-w-md">
@@ -275,7 +288,7 @@ const TransportPage = () => {
                   <h3 className="font-semibold">{selectedTransport.name}</h3>
                   <p className="text-sm text-muted-foreground">{selectedTransport.description}</p>
                   <p className="text-sm mt-1">
-                    <span className="font-medium">${selectedTransport.basePrice}</span> base fare
+                    <span className="font-medium">₹{selectedTransport.basePrice}</span> base fare
                   </p>
                 </div>
               </div>
@@ -350,15 +363,15 @@ const TransportPage = () => {
               <div className="space-y-2 border-t pt-4 mt-4">
                 <div className="flex justify-between">
                   <span className="text-sm">Base fare</span>
-                  <span className="text-sm font-medium">${selectedTransport.basePrice}</span>
+                  <span className="text-sm font-medium">₹{selectedTransport.basePrice}</span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-sm">Service fee</span>
-                  <span className="text-sm font-medium">${Math.floor(selectedTransport.basePrice * 0.1)}</span>
+                  <span className="text-sm font-medium">₹{Math.floor(selectedTransport.basePrice * 0.1)}</span>
                 </div>
                 <div className="flex justify-between font-medium pt-2 border-t">
                   <span>Total</span>
-                  <span>${selectedTransport.basePrice + Math.floor(selectedTransport.basePrice * 0.1)}</span>
+                  <span>₹{selectedTransport.basePrice + Math.floor(selectedTransport.basePrice * 0.1)}</span>
                 </div>
               </div>
             </div>
@@ -375,7 +388,6 @@ const TransportPage = () => {
         </Dialog>
       )}
       
-      {/* Confirmation Dialog */}
       <Dialog open={confirmationDialogOpen} onOpenChange={setConfirmationDialogOpen}>
         <DialogContent className="max-w-md">
           <div className="flex flex-col items-center text-center py-4">
