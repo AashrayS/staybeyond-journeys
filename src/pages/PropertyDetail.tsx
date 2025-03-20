@@ -50,7 +50,8 @@ import {
   Home, 
   Car,
   ArrowRight, 
-  ArrowLeft
+  ArrowLeft,
+  X
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { format, differenceInCalendarDays } from "date-fns";
