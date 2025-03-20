@@ -7,48 +7,48 @@
 
 @layer base {
   :root {
-    --background: 0 0% 100%;
-    --foreground: 240 10% 3.9%;
+    --background: 260 30% 99%;
+    --foreground: 270 10% 3.9%;
     --card: 0 0% 100%;
-    --card-foreground: 240 10% 3.9%;
+    --card-foreground: 270 10% 3.9%;
     --popover: 0 0% 100%;
-    --popover-foreground: 240 10% 3.9%;
-    --primary: 346 89% 60%;
-    --primary-foreground: 355 100% 97%;
-    --secondary: 240 4.8% 95.9%;
-    --secondary-foreground: 240 5.9% 10%;
-    --muted: 240 4.8% 95.9%;
-    --muted-foreground: 240 3.8% 46.1%;
-    --accent: 240 4.8% 95.9%;
-    --accent-foreground: 240 5.9% 10%;
+    --popover-foreground: 270 10% 3.9%;
+    --primary: 270 75% 60%;
+    --primary-foreground: 270 10% 98%;
+    --secondary: 270 10% 95.9%;
+    --secondary-foreground: 270 10% 10%;
+    --muted: 270 10% 95.9%;
+    --muted-foreground: 270 5% 46.1%;
+    --accent: 270 50% 95.9%;
+    --accent-foreground: 270 10% 10%;
     --destructive: 0 84.2% 60.2%;
     --destructive-foreground: 0 0% 98%;
-    --border: 240 5.9% 90%;
-    --input: 240 5.9% 90%;
-    --ring: 346 89% 60%;
+    --border: 270 20% 90%;
+    --input: 270 20% 90%;
+    --ring: 270 75% 60%;
     --radius: 0.75rem;
   }
  
   .dark {
-    --background: 240 10% 3.9%;
+    --background: 270 10% 3.9%;
     --foreground: 0 0% 98%;
-    --card: 240 10% 3.9%;
+    --card: 270 10% 3.9%;
     --card-foreground: 0 0% 98%;
-    --popover: 240 10% 3.9%;
+    --popover: 270 10% 3.9%;
     --popover-foreground: 0 0% 98%;
-    --primary: 346 89% 60%;
-    --primary-foreground: 355 100% 97%;
-    --secondary: 240 3.7% 15.9%;
+    --primary: 270 75% 60%;
+    --primary-foreground: 270 10% 98%;
+    --secondary: 270 5% 15.9%;
     --secondary-foreground: 0 0% 98%;
-    --muted: 240 3.7% 15.9%;
-    --muted-foreground: 240 5% 64.9%;
-    --accent: 240 3.7% 15.9%;
+    --muted: 270 5% 15.9%;
+    --muted-foreground: 270 5% 64.9%;
+    --accent: 270 5% 15.9%;
     --accent-foreground: 0 0% 98%;
     --destructive: 0 62.8% 30.6%;
     --destructive-foreground: 0 0% 98%;
-    --border: 240 3.7% 15.9%;
-    --input: 240 3.7% 15.9%;
-    --ring: 346 89% 60%;
+    --border: 270 5% 15.9%;
+    --input: 270 5% 15.9%;
+    --ring: 270 75% 60%;
   }
 }
 
@@ -116,6 +116,15 @@ html {
 .hover-lift:hover {
   transform: translateY(-5px);
   box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1);
+}
+
+/* Purple themed gradients */
+.purple-gradient {
+  background: linear-gradient(102.3deg, rgba(147,39,143,1) 5.9%, rgba(234,172,232,1) 64%, rgba(246,219,245,1) 89%);
+}
+
+.purple-light-gradient {
+  background: linear-gradient(90deg, hsla(277, 75%, 94%, 1) 0%, hsla(270, 50%, 91%, 1) 100%);
 }
 
 /* Custom Transitions */

@@ -10,7 +10,7 @@ const mapSupabasePropertyToAppProperty = (supaProperty: any): Property => {
     description: supaProperty.description,
     location: supaProperty.location,
     price: supaProperty.price,
-    currency: supaProperty.currency || "INR",
+    currency: supaProperty.currency || "₹",
     images: supaProperty.images || [],
     amenities: supaProperty.amenities || [],
     host_id: supaProperty.host_id,
@@ -89,7 +89,7 @@ export const fetchFeaturedProperties = async (): Promise<Property[]> => {
       // Return mock data as fallback with INR currency
       return indianProperties
         .filter(prop => prop.featured)
-        .map(prop => ({ ...prop, currency: "INR" }));
+        .map(prop => ({ ...prop, currency: "₹" }));
     }
 
     if (data && data.length > 0) {
@@ -100,13 +100,13 @@ export const fetchFeaturedProperties = async (): Promise<Property[]> => {
       // Return mock data if no featured properties in database yet
       return indianProperties
         .filter(prop => prop.featured)
-        .map(prop => ({ ...prop, currency: "INR" }));
+        .map(prop => ({ ...prop, currency: "₹" }));
     }
   } catch (error) {
     console.error("Exception fetching featured properties:", error);
     return indianProperties
       .filter(prop => prop.featured)
-      .map(prop => ({ ...prop, currency: "INR" }));
+      .map(prop => ({ ...prop, currency: "₹" }));
   }
 };
 
@@ -145,7 +145,7 @@ export const fetchAllProperties = async (filters?: SearchFilters): Promise<Prope
     if (error) {
       console.error("Error fetching properties:", error);
       // Return mock data as fallback with INR currency
-      return indianProperties.map(prop => ({ ...prop, currency: "INR" }));
+      return indianProperties.map(prop => ({ ...prop, currency: "₹" }));
     }
 
     if (data && data.length > 0) {
@@ -154,11 +154,11 @@ export const fetchAllProperties = async (filters?: SearchFilters): Promise<Prope
     } else {
       console.log("No properties found, using mock data");
       // Return mock data if no properties in database yet
-      return indianProperties.map(prop => ({ ...prop, currency: "INR" }));
+      return indianProperties.map(prop => ({ ...prop, currency: "₹" }));
     }
   } catch (error) {
     console.error("Exception fetching properties:", error);
-    return indianProperties.map(prop => ({ ...prop, currency: "INR" }));
+    return indianProperties.map(prop => ({ ...prop, currency: "₹" }));
   }
 };
 
