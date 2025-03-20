@@ -61,7 +61,7 @@ const mapSupabaseBookingToAppBooking = (supaBooking: any, property?: any): Booki
     property: property ? mapSupabasePropertyToAppProperty(property) : {} as Property,
     user_id: supaBooking.user_id,
     userId: supaBooking.user_id,
-    user: {} as any, // This would be filled in a real scenario
+    user: {} as any,
     start_date: supaBooking.start_date,
     startDate: supaBooking.start_date,
     end_date: supaBooking.end_date,
@@ -86,8 +86,10 @@ export const fetchFeaturedProperties = async (): Promise<Property[]> => {
 
     if (error) {
       console.error("Error fetching featured properties:", error);
-      // Return mock data as fallback
-      return indianProperties.filter(prop => prop.featured);
+      // Return mock data as fallback with INR currency
+      return indianProperties
+        .filter(prop => prop.featured)
+        .map(prop => ({ ...prop, currency: "INR" }));
     }
 
     if (data && data.length > 0) {
@@ -96,11 +98,15 @@ export const fetchFeaturedProperties = async (): Promise<Property[]> => {
     } else {
       console.log("No featured properties found, using mock data");
       // Return mock data if no featured properties in database yet
-      return indianProperties.filter(prop => prop.featured);
+      return indianProperties
+        .filter(prop => prop.featured)
+        .map(prop => ({ ...prop, currency: "INR" }));
     }
   } catch (error) {
     console.error("Exception fetching featured properties:", error);
-    return indianProperties.filter(prop => prop.featured);
+    return indianProperties
+      .filter(prop => prop.featured)
+      .map(prop => ({ ...prop, currency: "INR" }));
   }
 };
 
@@ -138,8 +144,8 @@ export const fetchAllProperties = async (filters?: SearchFilters): Promise<Prope
 
     if (error) {
       console.error("Error fetching properties:", error);
-      // Return mock data as fallback
-      return indianProperties;
+      // Return mock data as fallback with INR currency
+      return indianProperties.map(prop => ({ ...prop, currency: "INR" }));
     }
 
     if (data && data.length > 0) {
@@ -148,11 +154,11 @@ export const fetchAllProperties = async (filters?: SearchFilters): Promise<Prope
     } else {
       console.log("No properties found, using mock data");
       // Return mock data if no properties in database yet
-      return indianProperties;
+      return indianProperties.map(prop => ({ ...prop, currency: "INR" }));
     }
   } catch (error) {
     console.error("Exception fetching properties:", error);
-    return indianProperties;
+    return indianProperties.map(prop => ({ ...prop, currency: "INR" }));
   }
 };
 

@@ -35,6 +35,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { useToast } from "@/hooks/use-toast";
 import { 
   MapPin, 
   Calendar as CalendarIcon, 
@@ -51,12 +52,16 @@ import {
   Car,
   ArrowRight, 
   ArrowLeft,
-  X
+  X,
+  IndianRupee,
+  PartyPopper,
+  CheckCircle2
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { format, differenceInCalendarDays } from "date-fns";
 import { properties, bookings, transportationOptions } from "../data/mockData";
 import { Property } from "../types";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
 const PropertyDetail = () => {
   const { id } = useParams();
@@ -71,6 +76,10 @@ const PropertyDetail = () => {
   const [transportType, setTransportType] = useState(transportationOptions[0].id);
   const [totalPrice, setTotalPrice] = useState(0);
   const [isFavorite, setIsFavorite] = useState(false);
+  const [bookingSuccess, setBookingSuccess] = useState(false);
+  const [bookingId, setBookingId] = useState<string | null>(null);
+  
+  const { toast } = useToast();
   
   useEffect(() => {
     // Scroll to top when component mounts
@@ -80,7 +89,11 @@ const PropertyDetail = () => {
     const fetchedProperty = properties.find((p) => p.id === id);
     
     if (fetchedProperty) {
-      setProperty(fetchedProperty);
+      // Set currency to INR for Indian users
+      setProperty({
+        ...fetchedProperty,
+        currency: "INR"
+      });
     }
     
     setLoading(false);
@@ -114,9 +127,18 @@ const PropertyDetail = () => {
 
   const toggleFavorite = () => {
     setIsFavorite(!isFavorite);
+    toast({
+      title: isFavorite ? "Removed from favorites" : "Added to favorites",
+      description: isFavorite ? "This property has been removed from your favorites" : "This property has been added to your favorites",
+      variant: isFavorite ? "destructive" : "default",
+    });
   };
 
   const handleBookNow = () => {
+    // Generate a fake booking ID 
+    const newBookingId = Math.random().toString(36).substring(2, 10);
+    
+    // Here you would typically handle the booking process with Supabase
     console.log({
       propertyId: property?.id,
       checkIn,
@@ -125,9 +147,15 @@ const PropertyDetail = () => {
       totalPrice,
     });
     
-    // Here you would typically handle the booking process
-    // For now, we'll just open the transport dialog
-    setTransportDialogOpen(true);
+    // Show success message
+    setBookingId(newBookingId);
+    setBookingSuccess(true);
+    
+    toast({
+      title: "Booking Confirmed!",
+      description: `Your booking at ${property?.title} has been confirmed. Booking ID: ${newBookingId}`,
+      variant: "default",
+    });
   };
 
   const handleTransportBook = () => {
@@ -140,9 +168,13 @@ const PropertyDetail = () => {
       transportType,
     });
     
-    // Here you would handle the transport booking
-    // For now, we'll just close the dialog
+    // Close the dialog and show success message
     setTransportDialogOpen(false);
+    
+    toast({
+      title: "Transport Booked!",
+      description: `Your transportation has been booked successfully.`,
+    });
   };
 
   if (loading) {
@@ -214,6 +246,21 @@ const PropertyDetail = () => {
             </div>
           </div>
           
+          {/* Booking Success Message */}
+          {bookingSuccess && (
+            <Alert className="mb-6 bg-green-50 border-green-200 text-green-800">
+              <CheckCircle2 className="h-5 w-5 text-green-600" />
+              <AlertTitle className="flex items-center gap-2">
+                <span>Booking Confirmed!</span> 
+                <PartyPopper className="h-4 w-4" />
+              </AlertTitle>
+              <AlertDescription>
+                Your booking at {property.title} has been confirmed. Your booking ID is <span className="font-semibold">{bookingId}</span>. 
+                Check your email for more details.
+              </AlertDescription>
+            </Alert>
+          )}
+          
           {/* Property Title */}
           <h1 className="text-3xl md:text-4xl font-bold mb-2">{property.title}</h1>
           
@@ -234,7 +281,7 @@ const PropertyDetail = () => {
           {/* Property Images */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
             <div 
-              className="relative aspect-[4/3] rounded-lg overflow-hidden cursor-pointer"
+              className="relative aspect-[4/3] rounded-lg overflow-hidden cursor-pointer shadow-lg"
               onClick={() => setImageViewerOpen(true)}
             >
               <img
@@ -245,10 +292,10 @@ const PropertyDetail = () => {
               <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent opacity-0 hover:opacity-100 transition-opacity" />
             </div>
             <div className="grid grid-cols-2 gap-4">
-              {property.images.slice(1).map((image, index) => (
+              {property.images.slice(1, 5).map((image, index) => (
                 <div 
                   key={index} 
-                  className="relative aspect-square rounded-lg overflow-hidden cursor-pointer"
+                  className="relative aspect-square rounded-lg overflow-hidden cursor-pointer shadow-md"
                   onClick={() => {
                     setCurrentImageIndex(index + 1);
                     setImageViewerOpen(true);
@@ -280,7 +327,7 @@ const PropertyDetail = () => {
                   </p>
                 </div>
                 <div className="flex-shrink-0">
-                  <div className="h-12 w-12 rounded-full overflow-hidden">
+                  <div className="h-12 w-12 rounded-full overflow-hidden border-2 border-primary shadow-md">
                     <img
                       src={property.host.avatar}
                       alt={property.host.name}
@@ -304,7 +351,7 @@ const PropertyDetail = () => {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   {property.amenities.map((amenity) => (
                     <div key={amenity} className="flex items-center gap-3">
-                      <div className="flex-shrink-0 h-6 w-6 rounded-full bg-gray-100 dark:bg-gray-800 flex items-center justify-center">
+                      <div className="flex-shrink-0 h-6 w-6 rounded-full bg-primary/10 text-primary flex items-center justify-center">
                         <Check className="h-3.5 w-3.5" />
                       </div>
                       <span>{amenity}</span>
@@ -322,12 +369,12 @@ const PropertyDetail = () => {
                   </h2>
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  {property.reviews.map((review) => (
-                    <Card key={review.id} className="border-0 shadow-sm">
+                  {property.reviews.slice(0, 4).map((review) => (
+                    <Card key={review.id} className="border shadow-sm hover:shadow-md transition-shadow duration-300">
                       <CardContent className="p-5">
                         <div className="flex items-start gap-3">
                           <div className="flex-shrink-0">
-                            <div className="h-10 w-10 rounded-full overflow-hidden">
+                            <div className="h-10 w-10 rounded-full overflow-hidden border border-gray-200">
                               <img
                                 src={review.user.avatar}
                                 alt={review.user.name}
@@ -355,12 +402,15 @@ const PropertyDetail = () => {
                     </Card>
                   ))}
                 </div>
+                {property.reviews.length > 4 && (
+                  <Button variant="outline" className="mt-4 w-full">Show all {property.reviews.length} reviews</Button>
+                )}
               </div>
               
               {/* Location */}
               <div>
                 <h2 className="text-xl font-semibold mb-4">Location</h2>
-                <div className="aspect-[16/9] bg-gray-100 dark:bg-gray-800 rounded-lg mb-2 overflow-hidden">
+                <div className="aspect-[16/9] bg-gray-100 dark:bg-gray-800 rounded-lg mb-2 overflow-hidden shadow-md">
                   {/* Placeholder for map */}
                   <div className="w-full h-full flex items-center justify-center">
                     <MapPin className="h-8 w-8 text-muted-foreground" />
@@ -378,8 +428,9 @@ const PropertyDetail = () => {
                 <Card className="border shadow-lg overflow-hidden">
                   <CardContent className="p-6">
                     <div className="flex items-baseline justify-between mb-6">
-                      <div>
-                        <span className="text-2xl font-bold">${property.price}</span>
+                      <div className="flex items-center">
+                        <IndianRupee className="h-5 w-5 mr-1" />
+                        <span className="text-2xl font-bold">{property.price.toLocaleString('en-IN')}</span>
                         <span className="text-muted-foreground"> / night</span>
                       </div>
                       <div className="flex items-center gap-1 text-sm">
@@ -405,6 +456,7 @@ const PropertyDetail = () => {
                                   !checkIn && "text-muted-foreground"
                                 )}
                               >
+                                <CalendarIcon className="mr-2 h-4 w-4" />
                                 {checkIn ? format(checkIn, "MMM d, yyyy") : "Add date"}
                               </Button>
                             </PopoverTrigger>
@@ -431,6 +483,7 @@ const PropertyDetail = () => {
                                   !checkOut && "text-muted-foreground"
                                 )}
                               >
+                                <CalendarIcon className="mr-2 h-4 w-4" />
                                 {checkOut ? format(checkOut, "MMM d, yyyy") : "Add date"}
                               </Button>
                             </PopoverTrigger>
@@ -454,8 +507,11 @@ const PropertyDetail = () => {
                           value={guests.toString()} 
                           onValueChange={(value) => setGuests(parseInt(value))}
                         >
-                          <SelectTrigger>
-                            <SelectValue />
+                          <SelectTrigger className="w-full">
+                            <div className="flex items-center">
+                              <Users className="mr-2 h-4 w-4" />
+                              <SelectValue />
+                            </div>
                           </SelectTrigger>
                           <SelectContent>
                             {Array.from({ length: property.capacity }, (_, i) => i + 1).map((num) => (
@@ -469,59 +525,98 @@ const PropertyDetail = () => {
                     </div>
                     
                     <Button 
-                      className="w-full mb-4" 
-                      disabled={!checkIn || !checkOut || !guests}
+                      className="w-full mb-4 bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70"
+                      disabled={!checkIn || !checkOut || !guests || bookingSuccess}
                       onClick={handleBookNow}
                     >
-                      Reserve
+                      {bookingSuccess ? "Booked!" : "Reserve"}
                     </Button>
                     
                     {checkIn && checkOut && (
                       <div className="space-y-2 text-sm">
                         <div className="flex justify-between">
-                          <span>
-                            ${property.price} x {differenceInCalendarDays(checkOut, checkIn)} nights
-                          </span>
-                          <span>${totalPrice}</span>
+                          <div className="flex items-center">
+                            <IndianRupee className="h-3.5 w-3.5 mr-1" />
+                            <span>{property.price.toLocaleString('en-IN')} x {differenceInCalendarDays(checkOut, checkIn)} nights</span>
+                          </div>
+                          <div className="flex items-center">
+                            <IndianRupee className="h-3.5 w-3.5 mr-1" />
+                            <span>{totalPrice.toLocaleString('en-IN')}</span>
+                          </div>
                         </div>
                         <div className="flex justify-between">
                           <span>Cleaning fee</span>
-                          <span>$60</span>
+                          <div className="flex items-center">
+                            <IndianRupee className="h-3.5 w-3.5 mr-1" />
+                            <span>999</span>
+                          </div>
                         </div>
                         <div className="flex justify-between">
                           <span>Service fee</span>
-                          <span>${Math.floor(totalPrice * 0.12)}</span>
+                          <div className="flex items-center">
+                            <IndianRupee className="h-3.5 w-3.5 mr-1" />
+                            <span>{Math.floor(totalPrice * 0.12).toLocaleString('en-IN')}</span>
+                          </div>
                         </div>
                         <div className="border-t pt-2 mt-2 font-semibold flex justify-between">
                           <span>Total</span>
-                          <span>${totalPrice + 60 + Math.floor(totalPrice * 0.12)}</span>
+                          <div className="flex items-center">
+                            <IndianRupee className="h-3.5 w-3.5 mr-1" />
+                            <span>{(totalPrice + 999 + Math.floor(totalPrice * 0.12)).toLocaleString('en-IN')}</span>
+                          </div>
                         </div>
                       </div>
                     )}
                   </CardContent>
                 </Card>
                 
-                {/* Transport Card */}
-                <Card className="border shadow-lg overflow-hidden mt-6">
-                  <CardContent className="p-6">
-                    <div className="flex items-center gap-3 mb-4">
-                      <div className="h-10 w-10 rounded-full bg-gray-100 dark:bg-gray-800 flex items-center justify-center">
-                        <Car className="h-5 w-5" />
+                {/* Transport Card (Optional) */}
+                {!bookingSuccess && (
+                  <Card className="border shadow-lg overflow-hidden mt-6">
+                    <CardContent className="p-6">
+                      <div className="flex items-center gap-3 mb-4">
+                        <div className="h-10 w-10 rounded-full bg-primary/10 text-primary flex items-center justify-center">
+                          <Car className="h-5 w-5" />
+                        </div>
+                        <div>
+                          <h3 className="font-semibold">Need transportation?</h3>
+                          <p className="text-sm text-muted-foreground">Book a cab or auto during your stay (optional)</p>
+                        </div>
                       </div>
-                      <div>
-                        <h3 className="font-semibold">Need transportation?</h3>
-                        <p className="text-sm text-muted-foreground">Book a cab or auto during your stay</p>
+                      <Button 
+                        variant="outline" 
+                        className="w-full"
+                        onClick={() => setTransportDialogOpen(true)}
+                      >
+                        Book transport
+                      </Button>
+                    </CardContent>
+                  </Card>
+                )}
+                
+                {/* Booking Success Card */}
+                {bookingSuccess && (
+                  <Card className="border shadow-lg overflow-hidden mt-6 bg-green-50">
+                    <CardContent className="p-6">
+                      <div className="flex items-center gap-3 mb-4">
+                        <div className="h-10 w-10 rounded-full bg-green-100 text-green-600 flex items-center justify-center">
+                          <Car className="h-5 w-5" />
+                        </div>
+                        <div>
+                          <h3 className="font-semibold">Need transportation?</h3>
+                          <p className="text-sm">Add transport to your booking</p>
+                        </div>
                       </div>
-                    </div>
-                    <Button 
-                      variant="outline" 
-                      className="w-full"
-                      onClick={() => setTransportDialogOpen(true)}
-                    >
-                      Book transport
-                    </Button>
-                  </CardContent>
-                </Card>
+                      <Button 
+                        variant="outline" 
+                        className="w-full"
+                        onClick={() => setTransportDialogOpen(true)}
+                      >
+                        Add transport (optional)
+                      </Button>
+                    </CardContent>
+                  </Card>
+                )}
               </div>
             </div>
           </div>
@@ -568,11 +663,11 @@ const PropertyDetail = () => {
         </DialogContent>
       </Dialog>
       
-      {/* Transport Booking Dialog */}
+      {/* Transport Booking Dialog (Optional) */}
       <Dialog open={transportDialogOpen} onOpenChange={setTransportDialogOpen}>
         <DialogContent className="max-w-md">
           <DialogHeader>
-            <DialogTitle>Book Transportation</DialogTitle>
+            <DialogTitle>Book Transportation (Optional)</DialogTitle>
             <DialogDescription>
               Book a cab or auto for your stay at {property.title}
             </DialogDescription>
@@ -591,7 +686,7 @@ const PropertyDetail = () => {
                 <SelectContent>
                   {transportationOptions.map((option) => (
                     <SelectItem key={option.id} value={option.id}>
-                      {option.name} - ${option.basePrice}
+                      {option.name} - <IndianRupee className="inline h-3 w-3" />{option.basePrice}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -624,6 +719,7 @@ const PropertyDetail = () => {
                         true && "text-muted-foreground"
                       )}
                     >
+                      <CalendarIcon className="mr-2 h-4 w-4" />
                       Pick a date
                     </Button>
                   </PopoverTrigger>
@@ -654,7 +750,7 @@ const PropertyDetail = () => {
           
           <DialogFooter>
             <Button variant="outline" onClick={() => setTransportDialogOpen(false)}>
-              Cancel
+              Skip for now
             </Button>
             <Button onClick={handleTransportBook}>
               Book Transport
