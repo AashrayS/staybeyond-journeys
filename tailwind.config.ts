@@ -66,19 +66,32 @@ export default {
 					border: 'hsl(var(--sidebar-border))',
 					ring: 'hsl(var(--sidebar-ring))'
 				},
-				// New brand colors - blue theme
-				blue: {
-					50: '#f0f7ff',
-					100: '#e0effe',
-					200: '#bae0fd',
-					300: '#7cc7fc',
-					400: '#36adf9',
-					500: '#0e96ed',
-					600: '#0078cc',
-					700: '#0061a6',
-					800: '#005188',
-					900: '#00355a',
-					950: '#002541',
+				// Brand colors - teal and light green
+				teal: {
+					50: '#e6f7f3',
+					100: '#cceee7',
+					200: '#99dece',
+					300: '#66cdb6',
+					400: '#49c8a5', // Primary brand color
+					500: '#33bd98',
+					600: '#29977a',
+					700: '#1f725c',
+					800: '#154c3d',
+					900: '#0a261f',
+					950: '#05130f',
+				},
+				green: {
+					50: '#f5fcef',
+					100: '#ebf9de',
+					200: '#d7f3be',
+					300: '#c3ee9d',
+					400: '#b7ed80', // Secondary brand color
+					500: '#a6e85c',
+					600: '#85ba4a',
+					700: '#648c37',
+					800: '#425d25',
+					900: '#212f12',
+					950: '#111709',
 				}
 			},
 			borderRadius: {

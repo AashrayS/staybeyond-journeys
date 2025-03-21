@@ -66,7 +66,7 @@ const PropertyCard = ({ property, featured = false }: PropertyCardProps) => {
     <Link to={`/properties/${property.id}`}>
       <Card className={cn(
         "overflow-hidden border-0 shadow-md hover-lift transition-all duration-300 h-full bg-white dark:bg-gray-800",
-        featured ? "border-blue-200 dark:border-blue-900/20" : ""
+        featured ? "border-teal-200 dark:border-teal-900/20" : ""
       )}>
         {/* Property Image */}
         <div className={cn(
@@ -75,7 +75,7 @@ const PropertyCard = ({ property, featured = false }: PropertyCardProps) => {
         )}>
           {imageError ? (
             <div className="h-full w-full image-placeholder flex flex-col items-center justify-center p-4 text-center">
-              <ImageIcon className="h-8 w-8 mb-2 text-blue-400" />
+              <ImageIcon className="h-8 w-8 mb-2 text-teal-400" />
               <span>Image unavailable</span>
             </div>
           ) : (
@@ -124,7 +124,7 @@ const PropertyCard = ({ property, featured = false }: PropertyCardProps) => {
             className={cn(
               "absolute top-2 right-2 h-8 w-8 rounded-full transition-colors",
               isFavorite 
-                ? "bg-white/90 text-blue-500 hover:bg-white/80" 
+                ? "bg-white/90 text-teal-500 hover:bg-white/80" 
                 : "bg-black/30 text-white hover:bg-black/40"
             )}
             onClick={toggleFavorite}
@@ -133,13 +133,13 @@ const PropertyCard = ({ property, featured = false }: PropertyCardProps) => {
           </Button>
           
           {/* Property Type Badge */}
-          <Badge variant="secondary" className="absolute top-2 left-2 bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-100 border-none">
+          <Badge variant="secondary" className="absolute top-2 left-2 bg-teal-100 text-teal-800 dark:bg-teal-900 dark:text-teal-100 border-none">
             {property.propertyType}
           </Badge>
           
           {/* Featured Badge */}
           {property.featured && (
-            <Badge className="absolute bottom-2 left-2 bg-gradient-to-r from-blue-500 to-indigo-500 text-white border-none">
+            <Badge className="absolute bottom-2 left-2 bg-gradient-to-r from-teal-500 to-green-400 text-white border-none">
               Featured
             </Badge>
           )}
@@ -152,11 +152,11 @@ const PropertyCard = ({ property, featured = false }: PropertyCardProps) => {
               <div>
                 <h3 className="font-semibold text-base line-clamp-1">{property.title}</h3>
                 <div className="flex items-center text-sm text-muted-foreground mt-0.5">
-                  <MapPin className="h-3 w-3 mr-1 flex-shrink-0 text-blue-500" />
+                  <MapPin className="h-3 w-3 mr-1 flex-shrink-0 text-teal-500" />
                   <span className="truncate">{property.location.city}, {property.location.country}</span>
                 </div>
               </div>
-              <div className="flex items-center gap-1 bg-blue-50 dark:bg-blue-900/30 py-0.5 px-2 rounded text-sm">
+              <div className="flex items-center gap-1 bg-teal-50 dark:bg-teal-900/30 py-0.5 px-2 rounded text-sm">
                 <Star className="h-3 w-3 fill-yellow-500 text-yellow-500" />
                 <span className="font-medium">{property.rating.toFixed(1)}</span>
               </div>
@@ -165,23 +165,23 @@ const PropertyCard = ({ property, featured = false }: PropertyCardProps) => {
             {/* Property Features */}
             <div className="flex items-center gap-4 text-sm text-muted-foreground">
               <div className="flex items-center gap-1">
-                <Bed className="h-3.5 w-3.5 text-blue-600 dark:text-blue-400" />
+                <Bed className="h-3.5 w-3.5 text-teal-600 dark:text-teal-400" />
                 <span>{property.bedrooms}</span>
               </div>
               <div className="flex items-center gap-1">
-                <Bath className="h-3.5 w-3.5 text-blue-600 dark:text-blue-400" />
+                <Bath className="h-3.5 w-3.5 text-teal-600 dark:text-teal-400" />
                 <span>{property.bathrooms}</span>
               </div>
               <div className="flex items-center gap-1">
-                <Users className="h-3.5 w-3.5 text-blue-600 dark:text-blue-400" />
+                <Users className="h-3.5 w-3.5 text-teal-600 dark:text-teal-400" />
                 <span>Up to {property.capacity}</span>
               </div>
             </div>
             
             {/* Property Price */}
-            <div className="flex items-end justify-between mt-1 pt-2 border-t border-blue-100 dark:border-gray-700">
+            <div className="flex items-end justify-between mt-1 pt-2 border-t border-teal-100 dark:border-gray-700">
               <div>
-                <span className="text-base font-semibold text-blue-800 dark:text-blue-300">₹{property.price.toLocaleString('en-IN')}</span>
+                <span className="text-base font-semibold text-teal-800 dark:text-teal-300">₹{property.price.toLocaleString('en-IN')}</span>
                 <span className="text-muted-foreground text-sm"> / night</span>
               </div>
             </div>
