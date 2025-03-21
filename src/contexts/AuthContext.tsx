@@ -40,6 +40,21 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         setSession(session);
         setUser(session?.user ?? null);
 
+        // Handle specific auth events
+        if (event === 'SIGNED_IN') {
+          navigate('/');
+          toast({
+            title: "Welcome!",
+            description: "You've successfully signed in.",
+          });
+        } else if (event === 'SIGNED_OUT') {
+          navigate('/');
+          toast({
+            title: "Signed out",
+            description: "You've been successfully signed out.",
+          });
+        }
+
         if (session?.user) {
           const { data, error } = await supabase
             .from("profiles")
@@ -94,7 +109,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     return () => {
       subscription.unsubscribe();
     };
-  }, []);
+  }, [navigate, toast]);
 
   const signUp = async (email: string, password: string) => {
     try {
@@ -103,6 +118,9 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       const { error } = await supabase.auth.signUp({
         email,
         password,
+        options: {
+          emailRedirectTo: `${window.location.origin}/`
+        }
       });
 
       if (error) {

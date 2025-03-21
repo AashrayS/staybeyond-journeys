@@ -1,5 +1,5 @@
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { 
@@ -8,17 +8,19 @@ import {
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
-import { ChevronRight } from "lucide-react";
+import { ChevronRight, ImageIcon } from "lucide-react";
 import { transportationOptions } from "../data/mockData";
 
 const TransportOptions = () => {
   const [isVisible, setIsVisible] = useState(false);
+  const [loadedImages, setLoadedImages] = useState<Record<string, boolean>>({});
+  const [imageErrors, setImageErrors] = useState<Record<string, boolean>>({});
+  const sectionRef = useRef<HTMLElement>(null);
 
   useEffect(() => {
     const handleScroll = () => {
-      const section = document.getElementById('transport-section');
-      if (section) {
-        const rect = section.getBoundingClientRect();
+      if (sectionRef.current) {
+        const rect = sectionRef.current.getBoundingClientRect();
         const isInView = rect.top <= window.innerHeight * 0.75;
         setIsVisible(isInView);
       }
@@ -33,8 +35,23 @@ const TransportOptions = () => {
     };
   }, []);
 
+  const handleImageLoad = (id: string) => {
+    setLoadedImages(prev => ({
+      ...prev,
+      [id]: true
+    }));
+  };
+
+  const handleImageError = (id: string) => {
+    setImageErrors(prev => ({
+      ...prev,
+      [id]: true
+    }));
+    handleImageLoad(id); // Mark as loaded to remove loading state
+  };
+
   return (
-    <section id="transport-section" className="py-16 md:py-24 px-4 bg-white dark:bg-gray-800">
+    <section ref={sectionRef} id="transport-section" className="py-16 md:py-24 px-4 bg-white dark:bg-gray-800">
       <div className="container mx-auto max-w-7xl">
         <div className={cn(
           "flex flex-col md:flex-row items-start md:items-end justify-between mb-10 transition-all duration-700",
@@ -67,12 +84,27 @@ const TransportOptions = () => {
               )}
               style={{ transitionDelay: `${index * 150}ms` }}
             >
-              <div className="aspect-[4/3] w-full overflow-hidden">
-                <img
-                  src={option.image}
-                  alt={option.name}
-                  className="object-cover w-full h-full transition-transform duration-300 hover:scale-105"
-                />
+              <div className={cn(
+                "aspect-[4/3] w-full overflow-hidden relative",
+                !loadedImages[option.id] && "image-loading"
+              )}>
+                {imageErrors[option.id] ? (
+                  <div className="h-full w-full image-placeholder flex flex-col items-center justify-center p-4">
+                    <ImageIcon className="h-8 w-8 mb-2 text-blue-400" />
+                    <span>Image unavailable</span>
+                  </div>
+                ) : (
+                  <img
+                    src={option.image}
+                    alt={option.name}
+                    className={cn(
+                      "object-cover w-full h-full transition-transform duration-300 hover:scale-105",
+                      loadedImages[option.id] ? "opacity-100" : "opacity-0"
+                    )}
+                    onLoad={() => handleImageLoad(option.id)}
+                    onError={() => handleImageError(option.id)}
+                  />
+                )}
               </div>
               <CardContent className="p-5">
                 <div className="flex items-start justify-between mb-2">
@@ -82,7 +114,7 @@ const TransportOptions = () => {
                 <p className="text-sm text-muted-foreground mb-3">{option.description}</p>
                 <div className="flex items-center justify-between">
                   <div>
-                    <span className="font-semibold">${option.basePrice}</span>
+                    <span className="font-semibold">₹{(option.basePrice * 83).toFixed(0)}</span>
                     <span className="text-sm text-muted-foreground"> base fare</span>
                   </div>
                   <Button variant="outline" size="sm" asChild>
