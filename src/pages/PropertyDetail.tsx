@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { useParams, Link } from "react-router-dom";
 import Header from "../components/Header";
@@ -161,14 +162,14 @@ const PropertyDetail = () => {
     setBookingInProgress(true);
     
     try {
-      // Prepare booking data
+      // Prepare booking data - fix status type to be a literal
       const bookingData = {
         propertyId: property.id,
         userId: user.id,
         startDate: checkIn.toISOString(),
         endDate: checkOut.toISOString(),
         totalPrice: totalPrice,
-        status: "confirmed",
+        status: "confirmed" as "confirmed" | "pending" | "completed" | "cancelled",
         guests: guests,
       };
       
@@ -215,7 +216,7 @@ const PropertyDetail = () => {
     try {
       const selectedTransport = transportationOptions.find(t => t.id === transportType);
       
-      // Prepare transportation data
+      // Prepare transportation data - fix status type to be a literal
       const transportData = {
         bookingId: bookingId,
         type: transportType as "cab" | "auto" | "other",
@@ -223,7 +224,7 @@ const PropertyDetail = () => {
         dropoffLocation: property?.location.address || property?.location.city || "",
         pickupTime: checkIn ? checkIn.toISOString() : new Date().toISOString(),
         estimatedPrice: selectedTransport ? selectedTransport.basePrice : 500,
-        status: "confirmed"
+        status: "confirmed" as "confirmed" | "pending" | "completed" | "cancelled"
       };
       
       console.log("Creating transportation with data:", transportData);
