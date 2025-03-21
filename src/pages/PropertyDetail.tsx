@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useParams, Link } from "react-router-dom";
 import Header from "../components/Header";
@@ -62,6 +61,8 @@ import { format, differenceInCalendarDays } from "date-fns";
 import { properties, bookings, transportationOptions } from "../data/mockData";
 import { Property } from "../types";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { createBooking, createTransportation, fetchPropertyById } from "@/services/propertyService";
+import { useAuth } from "@/contexts/AuthContext";
 
 const PropertyDetail = () => {
   const { id } = useParams();
@@ -78,25 +79,29 @@ const PropertyDetail = () => {
   const [isFavorite, setIsFavorite] = useState(false);
   const [bookingSuccess, setBookingSuccess] = useState(false);
   const [bookingId, setBookingId] = useState<string | null>(null);
+  const [bookingInProgress, setBookingInProgress] = useState(false);
   
   const { toast } = useToast();
+  const { user } = useAuth();
   
   useEffect(() => {
     // Scroll to top when component mounts
     window.scrollTo(0, 0);
     
     // Fetch property details
-    const fetchedProperty = properties.find((p) => p.id === id);
-    
-    if (fetchedProperty) {
-      // Set currency to INR for Indian users
-      setProperty({
-        ...fetchedProperty,
-        currency: "INR"
-      });
+    if (id) {
+      fetchPropertyById(id)
+        .then(fetchedProperty => {
+          if (fetchedProperty) {
+            setProperty(fetchedProperty);
+          }
+          setLoading(false);
+        })
+        .catch(error => {
+          console.error("Error fetching property:", error);
+          setLoading(false);
+        });
     }
-    
-    setLoading(false);
   }, [id]);
 
   useEffect(() => {
@@ -134,47 +139,116 @@ const PropertyDetail = () => {
     });
   };
 
-  const handleBookNow = () => {
-    // Generate a fake booking ID 
-    const newBookingId = Math.random().toString(36).substring(2, 10);
+  const handleBookNow = async () => {
+    if (!user) {
+      toast({
+        title: "Authentication required",
+        description: "Please sign in to book this property",
+        variant: "destructive",
+      });
+      return;
+    }
     
-    // Here you would typically handle the booking process with Supabase
-    console.log({
-      propertyId: property?.id,
-      checkIn,
-      checkOut,
-      guests,
-      totalPrice,
-    });
+    if (!property || !checkIn || !checkOut) {
+      toast({
+        title: "Incomplete booking",
+        description: "Please select check-in and check-out dates",
+        variant: "destructive",
+      });
+      return;
+    }
     
-    // Show success message
-    setBookingId(newBookingId);
-    setBookingSuccess(true);
+    setBookingInProgress(true);
     
-    toast({
-      title: "Booking Confirmed!",
-      description: `Your booking at ${property?.title} has been confirmed. Booking ID: ${newBookingId}`,
-      variant: "default",
-    });
+    try {
+      // Prepare booking data
+      const bookingData = {
+        propertyId: property.id,
+        userId: user.id,
+        startDate: checkIn.toISOString(),
+        endDate: checkOut.toISOString(),
+        totalPrice: totalPrice,
+        status: "confirmed",
+        guests: guests,
+      };
+      
+      console.log("Creating booking with data:", bookingData);
+      
+      // Call the service to create the booking
+      const newBooking = await createBooking(bookingData);
+      
+      if (newBooking) {
+        // Set booking ID for display
+        setBookingId(newBooking.id);
+        setBookingSuccess(true);
+        
+        toast({
+          title: "Booking Confirmed!",
+          description: `Your booking at ${property.title} has been confirmed. Booking ID: ${newBooking.id}`,
+          variant: "default",
+        });
+      } else {
+        throw new Error("Failed to create booking");
+      }
+    } catch (error) {
+      console.error("Error creating booking:", error);
+      toast({
+        title: "Booking failed",
+        description: "There was an error processing your booking. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setBookingInProgress(false);
+    }
   };
 
-  const handleTransportBook = () => {
-    console.log({
-      propertyId: property?.id,
-      checkIn,
-      checkOut,
-      guests,
-      totalPrice,
-      transportType,
-    });
+  const handleTransportBook = async () => {
+    if (!bookingId) {
+      toast({
+        title: "Booking required",
+        description: "Please complete a booking first",
+        variant: "destructive",
+      });
+      return;
+    }
     
-    // Close the dialog and show success message
-    setTransportDialogOpen(false);
-    
-    toast({
-      title: "Transport Booked!",
-      description: `Your transportation has been booked successfully.`,
-    });
+    try {
+      const selectedTransport = transportationOptions.find(t => t.id === transportType);
+      
+      // Prepare transportation data
+      const transportData = {
+        bookingId: bookingId,
+        type: transportType as "cab" | "auto" | "other",
+        pickupLocation: "Airport",
+        dropoffLocation: property?.location.address || property?.location.city || "",
+        pickupTime: checkIn ? checkIn.toISOString() : new Date().toISOString(),
+        estimatedPrice: selectedTransport ? selectedTransport.basePrice : 500,
+        status: "confirmed"
+      };
+      
+      console.log("Creating transportation with data:", transportData);
+      
+      // Call the service to create the transportation
+      const newTransportation = await createTransportation(transportData);
+      
+      if (newTransportation) {
+        setTransportDialogOpen(false);
+        
+        toast({
+          title: "Transport Booked!",
+          description: `Your transportation has been booked successfully.`,
+        });
+      } else {
+        throw new Error("Failed to create transportation");
+      }
+    } catch (error) {
+      console.error("Error booking transportation:", error);
+      toast({
+        title: "Transport booking failed",
+        description: "There was an error booking your transportation. Please try again.",
+        variant: "destructive",
+      });
+    }
   };
 
   if (loading) {
@@ -514,7 +588,7 @@ const PropertyDetail = () => {
                             </div>
                           </SelectTrigger>
                           <SelectContent>
-                            {Array.from({ length: property.capacity }, (_, i) => i + 1).map((num) => (
+                            {property && Array.from({ length: property.capacity }, (_, i) => i + 1).map((num) => (
                               <SelectItem key={num} value={num.toString()}>
                                 {num} {num === 1 ? 'guest' : 'guests'}
                               </SelectItem>
@@ -526,10 +600,10 @@ const PropertyDetail = () => {
                     
                     <Button 
                       className="w-full mb-4 bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70"
-                      disabled={!checkIn || !checkOut || !guests || bookingSuccess}
+                      disabled={!checkIn || !checkOut || !guests || bookingSuccess || bookingInProgress}
                       onClick={handleBookNow}
                     >
-                      {bookingSuccess ? "Booked!" : "Reserve"}
+                      {bookingInProgress ? "Processing..." : (bookingSuccess ? "Booked!" : "Reserve")}
                     </Button>
                     
                     {checkIn && checkOut && (
@@ -657,7 +731,7 @@ const PropertyDetail = () => {
               <X className="h-5 w-5" />
             </Button>
             <div className="absolute bottom-4 left-1/2 -translate-x-1/2 bg-black/60 rounded-full px-3 py-1 text-white text-sm">
-              {currentImageIndex + 1} / {property.images.length}
+              {currentImageIndex + 1} / {property ? property.images.length : 0}
             </div>
           </div>
         </DialogContent>
@@ -669,7 +743,7 @@ const PropertyDetail = () => {
           <DialogHeader>
             <DialogTitle>Book Transportation (Optional)</DialogTitle>
             <DialogDescription>
-              Book a cab or auto for your stay at {property.title}
+              Book a cab or auto for your stay at {property?.title}
             </DialogDescription>
           </DialogHeader>
           
