@@ -1,6 +1,6 @@
 import { supabase } from "@/integrations/supabase/client";
 import { Property, Booking, Review, SearchFilters, Transportation } from "@/types";
-import { indianProperties } from "@/data/indianData";
+import { properties as mockProperties } from "@/data/mockData";
 
 // Helper function to map Supabase property to app property
 const mapSupabasePropertyToAppProperty = (supaProperty: any): Property => {
@@ -118,7 +118,7 @@ export const fetchFeaturedProperties = async (): Promise<Property[]> => {
     if (error) {
       console.error("Error fetching featured properties:", error);
       // Return mock data as fallback with INR currency
-      return indianProperties
+      return mockProperties
         .filter(prop => prop.featured)
         .map(prop => ({ ...prop, currency: "₹" }));
     }
@@ -129,13 +129,13 @@ export const fetchFeaturedProperties = async (): Promise<Property[]> => {
     } else {
       console.log("No featured properties found, using mock data");
       // Return mock data if no featured properties in database yet
-      return indianProperties
+      return mockProperties
         .filter(prop => prop.featured)
         .map(prop => ({ ...prop, currency: "₹" }));
     }
   } catch (error) {
     console.error("Exception fetching featured properties:", error);
-    return indianProperties
+    return mockProperties
       .filter(prop => prop.featured)
       .map(prop => ({ ...prop, currency: "₹" }));
   }
@@ -175,21 +175,139 @@ export const fetchAllProperties = async (filters?: SearchFilters): Promise<Prope
 
     if (error) {
       console.error("Error fetching properties:", error);
-      // Return mock data as fallback with INR currency
-      return indianProperties.map(prop => ({ ...prop, currency: "₹" }));
+      
+      // Filter mock data based on the provided filters
+      let filteredMockProperties = [...mockProperties];
+      
+      if (filters) {
+        if (filters.location) {
+          filteredMockProperties = filteredMockProperties.filter(prop => 
+            prop.location.city.toLowerCase().includes(filters.location?.toLowerCase() || '')
+          );
+        }
+        
+        if (filters.propertyType) {
+          filteredMockProperties = filteredMockProperties.filter(prop => 
+            prop.propertyType === filters.propertyType
+          );
+        }
+        
+        if (filters.bedrooms !== undefined) {
+          filteredMockProperties = filteredMockProperties.filter(prop => 
+            prop.bedrooms >= (filters.bedrooms || 1)
+          );
+        }
+        
+        if (filters.priceRange) {
+          filteredMockProperties = filteredMockProperties.filter(prop => 
+            prop.price >= (filters.priceRange?.min || 0) && 
+            prop.price <= (filters.priceRange?.max || 50000)
+          );
+        }
+
+        if (filters.amenities && filters.amenities.length > 0) {
+          filteredMockProperties = filteredMockProperties.filter(prop => 
+            filters.amenities?.every(amenity => prop.amenities.includes(amenity))
+          );
+        }
+      }
+      
+      return filteredMockProperties.map(prop => ({ ...prop, currency: "₹" }));
     }
 
     if (data && data.length > 0) {
       console.log("All properties fetched successfully:", data.length);
-      return data.map(prop => mapSupabasePropertyToAppProperty(prop));
+      let properties = data.map(prop => mapSupabasePropertyToAppProperty(prop));
+      
+      // Apply client-side filtering for amenities since it's an array
+      if (filters?.amenities && filters.amenities.length > 0) {
+        properties = properties.filter(prop => 
+          filters.amenities?.every(amenity => prop.amenities.includes(amenity))
+        );
+      }
+      
+      return properties;
     } else {
       console.log("No properties found, using mock data");
-      // Return mock data if no properties in database yet
-      return indianProperties.map(prop => ({ ...prop, currency: "₹" }));
+      
+      // Apply client-side filtering for mock data
+      let filteredMockProperties = [...mockProperties];
+      
+      if (filters) {
+        if (filters.location) {
+          filteredMockProperties = filteredMockProperties.filter(prop => 
+            prop.location.city.toLowerCase().includes(filters.location?.toLowerCase() || '')
+          );
+        }
+        
+        if (filters.propertyType) {
+          filteredMockProperties = filteredMockProperties.filter(prop => 
+            prop.propertyType === filters.propertyType
+          );
+        }
+        
+        if (filters.bedrooms !== undefined) {
+          filteredMockProperties = filteredMockProperties.filter(prop => 
+            prop.bedrooms >= (filters.bedrooms || 1)
+          );
+        }
+        
+        if (filters.priceRange) {
+          filteredMockProperties = filteredMockProperties.filter(prop => 
+            prop.price >= (filters.priceRange?.min || 0) && 
+            prop.price <= (filters.priceRange?.max || 50000)
+          );
+        }
+
+        if (filters.amenities && filters.amenities.length > 0) {
+          filteredMockProperties = filteredMockProperties.filter(prop => 
+            filters.amenities?.every(amenity => prop.amenities.includes(amenity))
+          );
+        }
+      }
+      
+      return filteredMockProperties.map(prop => ({ ...prop, currency: "₹" }));
     }
   } catch (error) {
     console.error("Exception fetching properties:", error);
-    return indianProperties.map(prop => ({ ...prop, currency: "₹" }));
+    
+    // Filter mock data based on the provided filters
+    let filteredMockProperties = [...mockProperties];
+    
+    if (filters) {
+      if (filters.location) {
+        filteredMockProperties = filteredMockProperties.filter(prop => 
+          prop.location.city.toLowerCase().includes(filters.location?.toLowerCase() || '')
+        );
+      }
+      
+      if (filters.propertyType) {
+        filteredMockProperties = filteredMockProperties.filter(prop => 
+          prop.propertyType === filters.propertyType
+        );
+      }
+      
+      if (filters.bedrooms !== undefined) {
+        filteredMockProperties = filteredMockProperties.filter(prop => 
+          prop.bedrooms >= (filters.bedrooms || 1)
+        );
+      }
+      
+      if (filters.priceRange) {
+        filteredMockProperties = filteredMockProperties.filter(prop => 
+          prop.price >= (filters.priceRange?.min || 0) && 
+          prop.price <= (filters.priceRange?.max || 50000)
+        );
+      }
+
+      if (filters.amenities && filters.amenities.length > 0) {
+        filteredMockProperties = filteredMockProperties.filter(prop => 
+          filters.amenities?.every(amenity => prop.amenities.includes(amenity))
+        );
+      }
+    }
+    
+    return filteredMockProperties.map(prop => ({ ...prop, currency: "₹" }));
   }
 };
 
@@ -207,7 +325,7 @@ export const fetchPropertyById = async (id: string): Promise<Property | null> =>
     if (error) {
       console.error("Error fetching property:", error);
       // Return mock data as fallback
-      return indianProperties.find(prop => prop.id === id) || null;
+      return mockProperties.find(prop => prop.id === id) || null;
     }
 
     if (data) {
@@ -222,11 +340,11 @@ export const fetchPropertyById = async (id: string): Promise<Property | null> =>
       return appProperty;
     } else {
       // Return mock data if property not found
-      return indianProperties.find(prop => prop.id === id) || null;
+      return mockProperties.find(prop => prop.id === id) || null;
     }
   } catch (error) {
     console.error("Exception fetching property:", error);
-    return indianProperties.find(prop => prop.id === id) || null;
+    return mockProperties.find(prop => prop.id === id) || null;
   }
 };
 

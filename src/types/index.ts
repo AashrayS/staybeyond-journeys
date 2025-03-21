@@ -106,5 +106,14 @@ export interface SearchFilters {
   };
   propertyType?: string;
   amenities?: string[];
-  bedrooms?: number; // Added the bedrooms property as optional
+  bedrooms?: number;
+  page?: number;
+  limit?: number;
+}
+
+export interface PaginationInfo {
+  currentPage: number;
+  totalPages: number;
+  totalItems: number;
+  itemsPerPage: number;
 }

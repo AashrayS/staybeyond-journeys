@@ -22,6 +22,14 @@ import {
 } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
 import { 
+  Pagination, 
+  PaginationContent, 
+  PaginationItem, 
+  PaginationLink, 
+  PaginationNext, 
+  PaginationPrevious 
+} from "@/components/ui/pagination";
+import { 
   MapPin, 
   Calendar as CalendarIcon, 
   Users, 
@@ -44,6 +52,11 @@ const PropertyListing = () => {
   const [showFilters, setShowFilters] = useState(false);
   const [checkIn, setCheckIn] = useState<Date | undefined>(undefined);
   const [checkOut, setCheckOut] = useState<Date | undefined>(undefined);
+  const [sortOption, setSortOption] = useState("recommended");
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const itemsPerPage = 9; // Show 9 properties per page
+
   const [filters, setFilters] = useState<SearchFilters>({
     location: searchParams.get("location") || "",
     guests: searchParams.get("guests") ? parseInt(searchParams.get("guests") as string) : undefined,
@@ -73,19 +86,65 @@ const PropertyListing = () => {
     if (searchParams.get("checkOut")) {
       setCheckOut(new Date(searchParams.get("checkOut") as string));
     }
+    if (searchParams.get("page")) {
+      setCurrentPage(parseInt(searchParams.get("page") as string));
+    }
   }, [searchParams]);
 
   useEffect(() => {
     if (properties) {
-      setFilteredProperties(properties);
+      let sortedProperties = [...properties];
+      
+      // Apply sorting
+      switch (sortOption) {
+        case "price-asc":
+          sortedProperties.sort((a, b) => a.price - b.price);
+          break;
+        case "price-desc":
+          sortedProperties.sort((a, b) => b.price - a.price);
+          break;
+        case "rating":
+          sortedProperties.sort((a, b) => b.rating - a.rating);
+          break;
+        default:
+          // Recommended - no specific sorting, maybe mix of ratings and featured
+          sortedProperties.sort((a, b) => {
+            if (a.featured && !b.featured) return -1;
+            if (!a.featured && b.featured) return 1;
+            return b.rating - a.rating;
+          });
+      }
+      
+      setFilteredProperties(sortedProperties);
+      
+      // Calculate total pages
+      setTotalPages(Math.ceil(sortedProperties.length / itemsPerPage));
     }
-  }, [properties]);
+  }, [properties, sortOption]);
+  
+  // Get paginated properties
+  const paginatedProperties = filteredProperties.slice(
+    (currentPage - 1) * itemsPerPage,
+    currentPage * itemsPerPage
+  );
+  
+  // Handle page change
+  const handlePageChange = (page: number) => {
+    setCurrentPage(page);
+    setSearchParams(prev => {
+      const newParams = new URLSearchParams(prev);
+      newParams.set("page", page.toString());
+      return newParams;
+    });
+    window.scrollTo(0, 0);
+  };
 
   const handleFilterChange = (key: keyof SearchFilters, value: any) => {
     setFilters((prev) => ({
       ...prev,
       [key]: value,
     }));
+    setCurrentPage(1);
   };
 
   const handleAmenityToggle = (amenity: string) => {
@@ -100,6 +159,7 @@ const PropertyListing = () => {
         amenities: newAmenities,
       };
     });
+    setCurrentPage(1);
   };
 
   const clearFilters = () => {
@@ -116,6 +176,54 @@ const PropertyListing = () => {
     });
     setCheckIn(undefined);
     setCheckOut(undefined);
+    setCurrentPage(1);
+  };
+
+  // Generate page numbers for pagination
+  const getPageNumbers = () => {
+    const pages = [];
+    const maxVisiblePages = 5;
+    
+    if (totalPages <= maxVisiblePages) {
+      // Show all pages if total pages is less than or equal to max visible pages
+      for (let i = 1; i <= totalPages; i++) {
+        pages.push(i);
+      }
+    } else {
+      // Always include first page
+      pages.push(1);
+      
+      // Calculate middle pages
+      let startPage = Math.max(2, currentPage - 1);
+      let endPage = Math.min(totalPages - 1, currentPage + 1);
+      
+      // Adjust if at the beginning or end
+      if (currentPage === 1) {
+        endPage = 3;
+      } else if (currentPage === totalPages) {
+        startPage = totalPages - 2;
+      }
+      
+      // Add ellipsis before middle pages if needed
+      if (startPage > 2) {
+        pages.push(-1); // -1 represents ellipsis
+      }
+      
+      // Add middle pages
+      for (let i = startPage; i <= endPage; i++) {
+        pages.push(i);
+      }
+      
+      // Add ellipsis after middle pages if needed
+      if (endPage < totalPages - 1) {
+        pages.push(-2); // -2 represents ellipsis
+      }
+      
+      // Always include last page
+      pages.push(totalPages);
+    }
+    
+    return pages;
   };
 
   return (
@@ -343,7 +451,7 @@ const PropertyListing = () => {
             )}
           </div>
           
-          {/* Results Count */}
+          {/* Results Count and Sort */}
           <div className="mb-6 flex justify-between items-center">
             <h1 className="text-2xl font-bold text-purple-900 dark:text-purple-100">
               {isLoading ? (
@@ -351,10 +459,15 @@ const PropertyListing = () => {
               ) : (
                 <>
                   {filteredProperties.length} {filteredProperties.length === 1 ? 'property' : 'properties'} found
+                  {currentPage > 1 && ` • Page ${currentPage} of ${totalPages}`}
                 </>
               )}
             </h1>
-            <Select defaultValue="recommended">
+            <Select 
+              defaultValue="recommended" 
+              value={sortOption}
+              onValueChange={setSortOption}
+            >
               <SelectTrigger className="w-[180px] border-purple-200 dark:border-gray-600">
                 <SelectValue placeholder="Sort by" />
               </SelectTrigger>
@@ -384,9 +497,9 @@ const PropertyListing = () => {
           )}
           
           {/* Property Grid */}
-          {!isLoading && filteredProperties.length > 0 && (
+          {!isLoading && paginatedProperties.length > 0 && (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 animate-fade-in">
-              {filteredProperties.map((property, index) => (
+              {paginatedProperties.map((property, index) => (
                 <div 
                   key={property.id}
                   className="animate-fade-up opacity-0 hover:-translate-y-1 transition-all duration-300"
@@ -396,6 +509,42 @@ const PropertyListing = () => {
                 </div>
               ))}
             </div>
+          )}
+          
+          {/* Pagination */}
+          {!isLoading && filteredProperties.length > 0 && totalPages > 1 && (
+            <Pagination className="my-10">
+              <PaginationContent>
+                {currentPage > 1 && (
+                  <PaginationItem>
+                    <PaginationPrevious onClick={() => handlePageChange(currentPage - 1)} />
+                  </PaginationItem>
+                )}
+                
+                {getPageNumbers().map((pageNum, i) => (
+                  pageNum < 0 ? (
+                    <PaginationItem key={`ellipsis-${i}`}>
+                      <span className="flex h-9 w-9 items-center justify-center">...</span>
+                    </PaginationItem>
+                  ) : (
+                    <PaginationItem key={pageNum}>
+                      <PaginationLink 
+                        isActive={pageNum === currentPage}
+                        onClick={() => handlePageChange(pageNum)}
+                      >
+                        {pageNum}
+                      </PaginationLink>
+                    </PaginationItem>
+                  )
+                ))}
+                
+                {currentPage < totalPages && (
+                  <PaginationItem>
+                    <PaginationNext onClick={() => handlePageChange(currentPage + 1)} />
+                  </PaginationItem>
+                )}
+              </PaginationContent>
+            </Pagination>
           )}
           
           {/* Error State */}

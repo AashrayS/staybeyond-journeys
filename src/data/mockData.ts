@@ -2,45 +2,137 @@
 import { Booking, Property, Transportation, Review } from "../types";
 import { indianUsers, indianProperties, indianLocations, indianPropertyTypes } from "./indianData";
 
+// Generate a large number of properties by duplicating and modifying the Indian properties
+const generateMoreProperties = (baseProperties: Property[], count: number): Property[] => {
+  const moreProperties: Property[] = [...baseProperties];
+  
+  // Generate cities and locations for variety
+  const cities = [...indianLocations];
+  const propertyTypes = [...indianPropertyTypes];
+  
+  // Add random variation to property prices
+  const priceVariations = [-5000, -3000, -2000, -1000, 0, 1000, 2000, 3000, 5000, 8000];
+  
+  // Create multiple variations of each base property
+  while (moreProperties.length < count) {
+    for (const baseProp of baseProperties) {
+      if (moreProperties.length >= count) break;
+      
+      // Create a new property based on the original
+      const newPropertyId = `prop${moreProperties.length + 1}`;
+      const randomCity = cities[Math.floor(Math.random() * cities.length)];
+      const randomPropertyType = propertyTypes[Math.floor(Math.random() * propertyTypes.length)];
+      const randomPriceModifier = priceVariations[Math.floor(Math.random() * priceVariations.length)];
+      const randomRating = (Math.floor(Math.random() * 15) + 35) / 10; // Rating between 3.5 and 5.0
+      
+      // Create slightly different title
+      const titleVariations = ["Luxurious", "Modern", "Cozy", "Elegant", "Charming", "Beautiful", "Spacious"];
+      const titlePrefix = titleVariations[Math.floor(Math.random() * titleVariations.length)];
+      
+      const newProperty: Property = {
+        ...baseProp,
+        id: newPropertyId,
+        title: `${titlePrefix} ${baseProp.propertyType} in ${randomCity}`,
+        price: Math.max(1000, baseProp.price + randomPriceModifier),
+        location: {
+          ...baseProp.location,
+          city: randomCity,
+        },
+        propertyType: randomPropertyType,
+        property_type: randomPropertyType,
+        rating: randomRating,
+        reviews: [], // Reviews will be added later
+        featured: Math.random() > 0.9, // 10% chance to be featured
+      };
+      
+      // Add bedrooms and bathroom variation
+      newProperty.bedrooms = Math.floor(Math.random() * 4) + 1; // 1-5 bedrooms
+      newProperty.bathrooms = newProperty.bedrooms - Math.floor(Math.random() * 2); // Slightly fewer bathrooms
+      newProperty.capacity = newProperty.bedrooms * 2; // Capacity based on bedrooms
+      
+      // Ensure all properties have images
+      if (!newProperty.images || newProperty.images.length === 0) {
+        newProperty.images = [
+          "https://images.unsplash.com/photo-1566073771259-6a8506099945?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=60",
+          "https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=60",
+          "https://images.unsplash.com/photo-1574362848149-11496d93a7c7?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=60",
+        ];
+      }
+      
+      // Randomly assign amenities
+      const allAmenities = [...amenitiesList];
+      const numAmenities = Math.floor(Math.random() * 8) + 3; // 3-10 amenities
+      newProperty.amenities = [];
+      
+      for (let i = 0; i < numAmenities; i++) {
+        const randomIndex = Math.floor(Math.random() * allAmenities.length);
+        const amenity = allAmenities[randomIndex];
+        if (!newProperty.amenities.includes(amenity)) {
+          newProperty.amenities.push(amenity);
+        }
+        allAmenities.splice(randomIndex, 1);
+      }
+      
+      moreProperties.push(newProperty);
+    }
+  }
+  
+  return moreProperties.slice(0, count);
+};
+
+// Generate at least 60 properties
+export const properties = generateMoreProperties(indianProperties, 65);
+
 // Export the Indian users
 export const users = indianUsers;
-
-// Export the Indian properties
-export const properties = indianProperties;
 
 // Generate reviews for each property
 const reviews: Review[] = [];
 
 properties.forEach(property => {
-  const propertyReviews = [
-    {
-      id: `review-${property.id}-1`,
-      propertyId: property.id,
-      userId: "user3",
-      user: {
-        name: users[2].name,
-        avatar: users[2].avatar,
-      },
-      rating: 4 + Math.random(),
-      comment: "Great property! Exactly as described. The host was very helpful and responsive. The location was perfect for exploring the area.",
-      date: "2023-11-15",
-    },
-    {
-      id: `review-${property.id}-2`,
-      propertyId: property.id,
-      userId: "user2",
-      user: {
-        name: users[1].name,
-        avatar: users[1].avatar,
-      },
-      rating: 4 + Math.random(),
-      comment: "Beautiful property with stunning views. Everything was clean and well-maintained. We especially enjoyed the local recommendations from the host.",
-      date: "2023-10-20",
-    },
-  ];
+  const numReviews = Math.floor(Math.random() * 3) + 1; // 1-3 reviews per property
+  const propertyReviews: Review[] = [];
   
-  reviews.push(...propertyReviews);
+  for (let i = 0; i < numReviews; i++) {
+    const reviewId = `review-${property.id}-${i+1}`;
+    const randomUserId = Math.floor(Math.random() * users.length);
+    const randomUser = users[randomUserId];
+    const randomRating = (Math.floor(Math.random() * 15) + 35) / 10; // Rating between 3.5 and 5.0
+    
+    const reviewComments = [
+      "Great property! Exactly as described. The host was very helpful and responsive. The location was perfect for exploring the area.",
+      "Beautiful property with stunning views. Everything was clean and well-maintained. We especially enjoyed the local recommendations from the host.",
+      "Had a wonderful stay here. The amenities were excellent and the property was even better than the pictures. Would definitely recommend!",
+      "The location was perfect and the property was immaculate. The host went above and beyond to make our stay comfortable.",
+      "Lovely place with great attention to detail. Very comfortable and the host was responsive and accommodating."
+    ];
+    
+    const review: Review = {
+      id: reviewId,
+      propertyId: property.id,
+      property_id: property.id,
+      userId: randomUser.id,
+      user_id: randomUser.id,
+      user: {
+        name: randomUser.name,
+        avatar: randomUser.avatar,
+      },
+      rating: randomRating,
+      comment: reviewComments[Math.floor(Math.random() * reviewComments.length)],
+      date: new Date(Date.now() - Math.floor(Math.random() * 90 * 24 * 60 * 60 * 1000)).toISOString(), // Random date within last 90 days
+    };
+    
+    propertyReviews.push(review);
+    reviews.push(review);
+  }
+  
   property.reviews = propertyReviews;
+  
+  // Update the property rating based on the reviews
+  if (propertyReviews.length > 0) {
+    const totalRating = propertyReviews.reduce((sum, review) => sum + review.rating, 0);
+    property.rating = parseFloat((totalRating / propertyReviews.length).toFixed(1));
+  }
 });
 
 // Generate sample bookings
