@@ -5,6 +5,30 @@ import { indianUsers, indianProperties as baseIndianProperties, indianLocations,
 // Export the Indian users
 export const users = indianUsers;
 
+// Define amenities list at the top of the file so it can be referenced by the functions below
+export const amenitiesList = [
+  "WiFi",
+  "Swimming Pool",
+  "Air Conditioning",
+  "Kitchen",
+  "Washer",
+  "Dryer",
+  "Parking",
+  "Gym",
+  "TV",
+  "Hot Tub",
+  "Beach Access",
+  "Mountain View",
+  "Lake Access",
+  "Fireplace",
+  "Balcony",
+  "Patio",
+  "BBQ Grill",
+  "Pets Allowed",
+  "Wheelchair Accessible",
+  "EV Charger"
+];
+
 // Generate more properties based on the base properties
 const generateMoreProperties = (baseProperties: Property[]): Property[] => {
   const moreProperties: Property[] = [];
@@ -175,29 +199,6 @@ export const transportationOptions = [
     basePrice: 3000,
     image: "https://images.unsplash.com/photo-1541899481282-d53bffe3c35d?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=60",
   },
-];
-
-export const amenitiesList = [
-  "WiFi",
-  "Swimming Pool",
-  "Air Conditioning",
-  "Kitchen",
-  "Washer",
-  "Dryer",
-  "Parking",
-  "Gym",
-  "TV",
-  "Hot Tub",
-  "Beach Access",
-  "Mountain View",
-  "Lake Access",
-  "Fireplace",
-  "Balcony",
-  "Patio",
-  "BBQ Grill",
-  "Pets Allowed",
-  "Wheelchair Accessible",
-  "EV Charger"
 ];
 
 // Use Indian property types from indianData.ts
