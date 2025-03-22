@@ -7,27 +7,18 @@ import { ChevronRight } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { fetchFeaturedProperties } from "@/services/propertyService";
 import { Property } from "@/types";
+import { useQuery } from "@tanstack/react-query";
 
 const FeaturedProperties = () => {
   const [isVisible, setIsVisible] = useState(false);
-  const [featuredProperties, setFeaturedProperties] = useState<Property[]>([]);
-  const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    const fetchProperties = async () => {
-      try {
-        setLoading(true);
-        const properties = await fetchFeaturedProperties();
-        setFeaturedProperties(properties);
-      } catch (error) {
-        console.error("Error fetching featured properties:", error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchProperties();
-  }, []);
+  // Use React Query for data fetching with caching
+  const { data: featuredProperties, isLoading } = useQuery({
+    queryKey: ['featuredProperties'],
+    queryFn: fetchFeaturedProperties,
+    staleTime: 5 * 60 * 1000, // 5 minutes
+    refetchOnWindowFocus: false,
+  });
 
   useEffect(() => {
     const handleScroll = () => {
@@ -48,7 +39,7 @@ const FeaturedProperties = () => {
     };
   }, []);
 
-  if (loading) {
+  if (isLoading) {
     return (
       <section id="featured-section" className="py-16 md:py-24 px-4 bg-gradient-to-br from-white to-teal-50 dark:from-gray-900 dark:to-teal-900/10">
         <div className="container mx-auto max-w-7xl">
@@ -98,7 +89,7 @@ const FeaturedProperties = () => {
           </Button>
         </div>
 
-        {featuredProperties.length > 0 ? (
+        {featuredProperties && featuredProperties.length > 0 ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-8">
             {featuredProperties.map((property, index) => (
               <div 

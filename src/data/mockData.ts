@@ -29,18 +29,19 @@ export const amenitiesList = [
   "EV Charger"
 ];
 
-// Generate more properties based on the base properties
-const generateMoreProperties = (baseProperties: Property[]): Property[] => {
+// Generate more properties based on the base properties - only do this once
+const cachedProperties = (() => {
+  console.time('Generate properties');
   const moreProperties: Property[] = [];
   
   // First include the original properties
-  moreProperties.push(...baseProperties);
+  moreProperties.push(...baseIndianProperties);
   
   // Generate 60+ more properties based on the originals with variations
   for (let i = 0; i < 60; i++) {
     // Clone a random base property and modify it
-    const randomBaseIndex = Math.floor(Math.random() * baseProperties.length);
-    const baseProp = baseProperties[randomBaseIndex];
+    const randomBaseIndex = Math.floor(Math.random() * baseIndianProperties.length);
+    const baseProp = baseIndianProperties[randomBaseIndex];
     
     // Create a variation of the property
     const newLocationIndex = Math.floor(Math.random() * indianLocations.length);
@@ -69,12 +70,11 @@ const generateMoreProperties = (baseProperties: Property[]): Property[] => {
     };
     
     // Randomize some amenities
-    const allAmenities = amenitiesList;
     newProperty.amenities = [];
     const numAmenities = Math.floor(Math.random() * 10) + 5; // 5-15 amenities
     
     for (let j = 0; j < numAmenities; j++) {
-      const randomAmenity = allAmenities[Math.floor(Math.random() * allAmenities.length)];
+      const randomAmenity = amenitiesList[Math.floor(Math.random() * amenitiesList.length)];
       if (!newProperty.amenities.includes(randomAmenity)) {
         newProperty.amenities.push(randomAmenity);
       }
@@ -84,46 +84,51 @@ const generateMoreProperties = (baseProperties: Property[]): Property[] => {
     moreProperties.push(newProperty);
   }
   
+  console.timeEnd('Generate properties');
   return moreProperties;
-};
+})();
 
-// Generate the extended properties
-export const properties = generateMoreProperties(baseIndianProperties);
+// Export the generated properties - this avoids regenerating on every import
+export const properties = cachedProperties;
 
-// Generate reviews for each property
-const reviews: Review[] = [];
+// Generate reviews for each property - use memoization to do this only once
+const cachedReviews = (() => {
+  const reviews: Review[] = [];
 
-properties.forEach(property => {
-  const propertyReviews = [
-    {
-      id: `review-${property.id}-1`,
-      propertyId: property.id,
-      userId: "user3",
-      user: {
-        name: users[2].name,
-        avatar: users[2].avatar,
+  properties.forEach(property => {
+    const propertyReviews = [
+      {
+        id: `review-${property.id}-1`,
+        propertyId: property.id,
+        userId: "user3",
+        user: {
+          name: users[2].name,
+          avatar: users[2].avatar,
+        },
+        rating: 4 + Math.random(),
+        comment: "Great property! Exactly as described. The host was very helpful and responsive. The location was perfect for exploring the area.",
+        date: "2023-11-15",
       },
-      rating: 4 + Math.random(),
-      comment: "Great property! Exactly as described. The host was very helpful and responsive. The location was perfect for exploring the area.",
-      date: "2023-11-15",
-    },
-    {
-      id: `review-${property.id}-2`,
-      propertyId: property.id,
-      userId: "user2",
-      user: {
-        name: users[1].name,
-        avatar: users[1].avatar,
+      {
+        id: `review-${property.id}-2`,
+        propertyId: property.id,
+        userId: "user2",
+        user: {
+          name: users[1].name,
+          avatar: users[1].avatar,
+        },
+        rating: 4 + Math.random(),
+        comment: "Beautiful property with stunning views. Everything was clean and well-maintained. We especially enjoyed the local recommendations from the host.",
+        date: "2023-10-20",
       },
-      rating: 4 + Math.random(),
-      comment: "Beautiful property with stunning views. Everything was clean and well-maintained. We especially enjoyed the local recommendations from the host.",
-      date: "2023-10-20",
-    },
-  ];
-  
-  reviews.push(...propertyReviews);
-  property.reviews = propertyReviews;
-});
+    ];
+    
+    reviews.push(...propertyReviews);
+    property.reviews = propertyReviews;
+  });
+
+  return reviews;
+})();
 
 // Generate sample bookings
 export const bookings: Booking[] = [

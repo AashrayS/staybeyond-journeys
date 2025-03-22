@@ -1,6 +1,6 @@
 import { supabase } from "@/integrations/supabase/client";
 import { Property, Booking, Review, SearchFilters, Transportation } from "@/types";
-import { indianProperties } from "@/data/indianData";
+import { properties as mockProperties, bookings as mockBookings } from "@/data/mockData";
 
 // Helper function to map Supabase property to app property
 const mapSupabasePropertyToAppProperty = (supaProperty: any): Property => {
@@ -106,8 +106,20 @@ const mapSupabaseTransportationToAppTransportation = (supaTransportation: any): 
   };
 };
 
+// Add caching to improve performance
+let cachedFeaturedProperties: Property[] | null = null;
+let cachedFeaturedTimestamp: number = 0;
+const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes in milliseconds
+
 export const fetchFeaturedProperties = async (): Promise<Property[]> => {
   try {
+    // Check if we have a valid cache
+    const now = Date.now();
+    if (cachedFeaturedProperties && (now - cachedFeaturedTimestamp) < CACHE_DURATION) {
+      console.log("Returning cached featured properties");
+      return cachedFeaturedProperties;
+    }
+
     console.log("Fetching featured properties from Supabase...");
     const { data, error } = await supabase
       .from("properties")
@@ -118,31 +130,68 @@ export const fetchFeaturedProperties = async (): Promise<Property[]> => {
     if (error) {
       console.error("Error fetching featured properties:", error);
       // Return mock data as fallback with INR currency
-      return indianProperties
+      const featuredMockProperties = mockProperties
         .filter(prop => prop.featured)
+        .slice(0, 6)
         .map(prop => ({ ...prop, currency: "₹" }));
+      
+      // Update cache
+      cachedFeaturedProperties = featuredMockProperties;
+      cachedFeaturedTimestamp = now;
+      
+      return featuredMockProperties;
     }
 
     if (data && data.length > 0) {
       console.log("Featured properties fetched successfully:", data.length);
-      return data.map(prop => mapSupabasePropertyToAppProperty(prop));
+      const mappedProperties = data.map(prop => mapSupabasePropertyToAppProperty(prop));
+      
+      // Update cache
+      cachedFeaturedProperties = mappedProperties;
+      cachedFeaturedTimestamp = now;
+      
+      return mappedProperties;
     } else {
       console.log("No featured properties found, using mock data");
       // Return mock data if no featured properties in database yet
-      return indianProperties
+      const featuredMockProperties = mockProperties
         .filter(prop => prop.featured)
+        .slice(0, 6)
         .map(prop => ({ ...prop, currency: "₹" }));
+      
+      // Update cache
+      cachedFeaturedProperties = featuredMockProperties;
+      cachedFeaturedTimestamp = now;
+      
+      return featuredMockProperties;
     }
   } catch (error) {
     console.error("Exception fetching featured properties:", error);
-    return indianProperties
+    const featuredMockProperties = mockProperties
       .filter(prop => prop.featured)
+      .slice(0, 6)
       .map(prop => ({ ...prop, currency: "₹" }));
+    
+    return featuredMockProperties;
   }
 };
 
+let cachedAllProperties: Property[] | null = null;
+let cachedAllTimestamp: number = 0;
+let lastAppliedFilters: string = '';
+
 export const fetchAllProperties = async (filters?: SearchFilters): Promise<Property[]> => {
   try {
+    // Create a key for the current filters
+    const filtersKey = filters ? JSON.stringify(filters) : '';
+    
+    // Check if we have a valid cache with the same filters
+    const now = Date.now();
+    if (cachedAllProperties && (now - cachedAllTimestamp) < CACHE_DURATION && lastAppliedFilters === filtersKey) {
+      console.log("Returning cached properties with filters");
+      return cachedAllProperties;
+    }
+    
     console.log("Fetching all properties from Supabase with filters:", filters);
     let query = supabase.from("properties").select("*");
 
@@ -175,22 +224,85 @@ export const fetchAllProperties = async (filters?: SearchFilters): Promise<Prope
 
     if (error) {
       console.error("Error fetching properties:", error);
-      // Return mock data as fallback with INR currency
-      return indianProperties.map(prop => ({ ...prop, currency: "₹" }));
+      // Filter and return mock data as fallback with INR currency
+      const filteredMockProperties = filterMockProperties(mockProperties, filters);
+      
+      // Update cache
+      cachedAllProperties = filteredMockProperties;
+      cachedAllTimestamp = now;
+      lastAppliedFilters = filtersKey;
+      
+      return filteredMockProperties;
     }
 
     if (data && data.length > 0) {
       console.log("All properties fetched successfully:", data.length);
-      return data.map(prop => mapSupabasePropertyToAppProperty(prop));
+      const mappedProperties = data.map(prop => mapSupabasePropertyToAppProperty(prop));
+      
+      // Update cache
+      cachedAllProperties = mappedProperties;
+      cachedAllTimestamp = now;
+      lastAppliedFilters = filtersKey;
+      
+      return mappedProperties;
     } else {
       console.log("No properties found, using mock data");
-      // Return mock data if no properties in database yet
-      return indianProperties.map(prop => ({ ...prop, currency: "₹" }));
+      // Filter and return mock data if no properties in database yet
+      const filteredMockProperties = filterMockProperties(mockProperties, filters);
+      
+      // Update cache
+      cachedAllProperties = filteredMockProperties;
+      cachedAllTimestamp = now;
+      lastAppliedFilters = filtersKey;
+      
+      return filteredMockProperties;
     }
   } catch (error) {
     console.error("Exception fetching properties:", error);
-    return indianProperties.map(prop => ({ ...prop, currency: "₹" }));
+    return filterMockProperties(mockProperties, filters);
   }
+};
+
+// Helper function to filter mock properties based on search filters
+const filterMockProperties = (properties: Property[], filters?: SearchFilters): Property[] => {
+  if (!filters) {
+    return properties.map(prop => ({ ...prop, currency: "₹" }));
+  }
+  
+  let filteredProps = [...properties];
+  
+  if (filters.location) {
+    filteredProps = filteredProps.filter(
+      prop => prop.location.city.toLowerCase().includes(filters.location!.toLowerCase())
+    );
+  }
+  
+  if (filters.priceRange) {
+    if (filters.priceRange.min !== undefined) {
+      filteredProps = filteredProps.filter(prop => prop.price >= filters.priceRange!.min!);
+    }
+    if (filters.priceRange.max !== undefined) {
+      filteredProps = filteredProps.filter(prop => prop.price <= filters.priceRange!.max!);
+    }
+  }
+  
+  if (filters.propertyType) {
+    filteredProps = filteredProps.filter(
+      prop => prop.propertyType === filters.propertyType
+    );
+  }
+  
+  if (filters.bedrooms !== undefined) {
+    filteredProps = filteredProps.filter(prop => prop.bedrooms >= filters.bedrooms!);
+  }
+  
+  if (filters.amenities && filters.amenities.length > 0) {
+    filteredProps = filteredProps.filter(prop => 
+      filters.amenities!.every(amenity => prop.amenities.includes(amenity))
+    );
+  }
+  
+  return filteredProps.map(prop => ({ ...prop, currency: "₹" }));
 };
 
 export const fetchPropertyById = async (id: string): Promise<Property | null> => {
@@ -207,7 +319,7 @@ export const fetchPropertyById = async (id: string): Promise<Property | null> =>
     if (error) {
       console.error("Error fetching property:", error);
       // Return mock data as fallback
-      return indianProperties.find(prop => prop.id === id) || null;
+      return mockProperties.find(prop => prop.id === id) || null;
     }
 
     if (data) {
@@ -222,11 +334,11 @@ export const fetchPropertyById = async (id: string): Promise<Property | null> =>
       return appProperty;
     } else {
       // Return mock data if property not found
-      return indianProperties.find(prop => prop.id === id) || null;
+      return mockProperties.find(prop => prop.id === id) || null;
     }
   } catch (error) {
     console.error("Exception fetching property:", error);
-    return indianProperties.find(prop => prop.id === id) || null;
+    return mockProperties.find(prop => prop.id === id) || null;
   }
 };
 
