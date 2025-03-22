@@ -373,18 +373,24 @@ export const createBooking = async (bookingData: Partial<Booking>): Promise<Book
   try {
     console.log("Creating booking with data:", bookingData);
     
-    // Fix: Safely handle potentially null dates with nullish coalescing
-    const startDate = bookingData.startDate 
-      ? (typeof bookingData.startDate === 'object' 
-          ? bookingData.startDate.toISOString() 
-          : bookingData.startDate) 
-      : bookingData.start_date || new Date().toISOString();
+    // Fix: Handle null values safely with type guards
+    let startDate: string;
+    if (bookingData.startDate) {
+      startDate = typeof bookingData.startDate === 'object' 
+        ? bookingData.startDate.toISOString() 
+        : bookingData.startDate;
+    } else {
+      startDate = bookingData.start_date || new Date().toISOString();
+    }
     
-    const endDate = bookingData.endDate 
-      ? (typeof bookingData.endDate === 'object' 
-          ? bookingData.endDate.toISOString() 
-          : bookingData.endDate) 
-      : bookingData.end_date || new Date(Date.now() + 86400000).toISOString(); // Default to tomorrow
+    let endDate: string;
+    if (bookingData.endDate) {
+      endDate = typeof bookingData.endDate === 'object' 
+        ? bookingData.endDate.toISOString() 
+        : bookingData.endDate;
+    } else {
+      endDate = bookingData.end_date || new Date(Date.now() + 86400000).toISOString(); // Default to tomorrow
+    }
     
     // Ensure we have property ID in correct format
     const propertyId = bookingData.propertyId || bookingData.property_id;
@@ -445,12 +451,15 @@ export const createTransportation = async (transportationData: Partial<Transport
   try {
     console.log("Creating transportation with data:", transportationData);
     
-    // Fix: Safely handle potentially null pickup time with nullish coalescing
-    const pickupTime = transportationData.pickupTime 
-      ? (typeof transportationData.pickupTime === 'object'
-          ? transportationData.pickupTime.toISOString()
-          : transportationData.pickupTime) 
-      : transportationData.pickup_time || new Date().toISOString();
+    // Fix: Handle null pickup time with proper type guards
+    let pickupTime: string;
+    if (transportationData.pickupTime) {
+      pickupTime = typeof transportationData.pickupTime === 'object'
+        ? transportationData.pickupTime.toISOString()
+        : transportationData.pickupTime;
+    } else {
+      pickupTime = transportationData.pickup_time || new Date().toISOString();
+    }
     
     // Create a valid transportation object with all required fields
     const supabaseTransportationData = {
