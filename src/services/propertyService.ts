@@ -1,4 +1,3 @@
-
 import { supabase } from "@/integrations/supabase/client";
 import { Property, Booking, Review, SearchFilters, Transportation } from "@/types";
 import { properties as mockProperties, bookings as mockBookings } from "@/data/mockData";
@@ -374,14 +373,18 @@ export const createBooking = async (bookingData: Partial<Booking>): Promise<Book
   try {
     console.log("Creating booking with data:", bookingData);
     
-    // Fix: Convert date objects to ISO strings if they aren't already
-    const startDate = typeof bookingData.startDate === 'object' ? 
-      bookingData.startDate.toISOString() : 
-      bookingData.startDate || bookingData.start_date;
+    // Fix: Safely handle potentially null dates with nullish coalescing
+    const startDate = bookingData.startDate 
+      ? (typeof bookingData.startDate === 'object' 
+          ? bookingData.startDate.toISOString() 
+          : bookingData.startDate) 
+      : bookingData.start_date || new Date().toISOString();
     
-    const endDate = typeof bookingData.endDate === 'object' ? 
-      bookingData.endDate.toISOString() : 
-      bookingData.endDate || bookingData.end_date;
+    const endDate = bookingData.endDate 
+      ? (typeof bookingData.endDate === 'object' 
+          ? bookingData.endDate.toISOString() 
+          : bookingData.endDate) 
+      : bookingData.end_date || new Date(Date.now() + 86400000).toISOString(); // Default to tomorrow
     
     // Ensure we have property ID in correct format
     const propertyId = bookingData.propertyId || bookingData.property_id;
@@ -442,10 +445,12 @@ export const createTransportation = async (transportationData: Partial<Transport
   try {
     console.log("Creating transportation with data:", transportationData);
     
-    // Fix: Ensure pickup time is properly formatted
-    const pickupTime = typeof transportationData.pickupTime === 'object' ?
-      transportationData.pickupTime.toISOString() :
-      transportationData.pickupTime || transportationData.pickup_time;
+    // Fix: Safely handle potentially null pickup time with nullish coalescing
+    const pickupTime = transportationData.pickupTime 
+      ? (typeof transportationData.pickupTime === 'object'
+          ? transportationData.pickupTime.toISOString()
+          : transportationData.pickupTime) 
+      : transportationData.pickup_time || new Date().toISOString();
     
     // Create a valid transportation object with all required fields
     const supabaseTransportationData = {
