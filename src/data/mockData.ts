@@ -1,12 +1,70 @@
 
 import { Booking, Property, Transportation, Review } from "../types";
-import { indianUsers, indianProperties, indianLocations, indianPropertyTypes } from "./indianData";
+import { indianUsers, indianProperties as baseIndianProperties, indianLocations, indianPropertyTypes } from "./indianData";
 
 // Export the Indian users
 export const users = indianUsers;
 
-// Export the Indian properties
-export const properties = indianProperties;
+// Generate more properties based on the base properties
+const generateMoreProperties = (baseProperties: Property[]): Property[] => {
+  const moreProperties: Property[] = [];
+  
+  // First include the original properties
+  moreProperties.push(...baseProperties);
+  
+  // Generate 60+ more properties based on the originals with variations
+  for (let i = 0; i < 60; i++) {
+    // Clone a random base property and modify it
+    const randomBaseIndex = Math.floor(Math.random() * baseProperties.length);
+    const baseProp = baseProperties[randomBaseIndex];
+    
+    // Create a variation of the property
+    const newLocationIndex = Math.floor(Math.random() * indianLocations.length);
+    const newPropTypeIndex = Math.floor(Math.random() * indianPropertyTypes.length);
+    
+    const newProperty: Property = {
+      ...JSON.parse(JSON.stringify(baseProp)), // Deep clone
+      id: `extended-prop-${i + 1}`,
+      title: `${indianPropertyTypes[newPropTypeIndex]} in ${indianLocations[newLocationIndex]}`,
+      location: {
+        city: indianLocations[newLocationIndex],
+        country: "India",
+        address: `${Math.floor(Math.random() * 999) + 1} ${["Main Street", "Park Avenue", "Beach Road", "Garden Lane", "Mountain View"][Math.floor(Math.random() * 5)]}, ${indianLocations[newLocationIndex]}`,
+        coordinates: {
+          lat: 18.5 + (Math.random() * 10),
+          lng: 73.5 + (Math.random() * 10)
+        }
+      },
+      price: Math.floor((Math.random() * 10000) + 3000) * 10, // Between 3000 and 13000, rounded to nearest 10
+      rating: 3.5 + (Math.random() * 1.5), // Between 3.5 and 5
+      bedrooms: Math.floor(Math.random() * 5) + 1, // 1 to 5 bedrooms
+      bathrooms: Math.floor(Math.random() * 3) + 1, // 1 to 3 bathrooms
+      capacity: Math.floor(Math.random() * 8) + 1, // 1 to 8 guests
+      propertyType: indianPropertyTypes[newPropTypeIndex],
+      featured: Math.random() > 0.85, // 15% chance to be featured
+    };
+    
+    // Randomize some amenities
+    const allAmenities = amenitiesList;
+    newProperty.amenities = [];
+    const numAmenities = Math.floor(Math.random() * 10) + 5; // 5-15 amenities
+    
+    for (let j = 0; j < numAmenities; j++) {
+      const randomAmenity = allAmenities[Math.floor(Math.random() * allAmenities.length)];
+      if (!newProperty.amenities.includes(randomAmenity)) {
+        newProperty.amenities.push(randomAmenity);
+      }
+    }
+    
+    // Add to the collection
+    moreProperties.push(newProperty);
+  }
+  
+  return moreProperties;
+};
+
+// Generate the extended properties
+export const properties = generateMoreProperties(baseIndianProperties);
 
 // Generate reviews for each property
 const reviews: Review[] = [];

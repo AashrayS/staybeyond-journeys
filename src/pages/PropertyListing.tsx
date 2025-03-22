@@ -37,6 +37,18 @@ import { fetchAllProperties } from "../services/propertyService";
 import { useQuery } from "@tanstack/react-query";
 import { amenitiesList, propertyTypes, locations } from "../data/mockData";
 import { Skeleton } from "@/components/ui/skeleton";
+import {
+  Pagination,
+  PaginationContent,
+  PaginationEllipsis,
+  PaginationItem,
+  PaginationLink,
+  PaginationNext,
+  PaginationPrevious,
+} from "@/components/ui/pagination";
+
+// Items per page for pagination
+const ITEMS_PER_PAGE = 9;
 
 const PropertyListing = () => {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -44,6 +56,8 @@ const PropertyListing = () => {
   const [showFilters, setShowFilters] = useState(false);
   const [checkIn, setCheckIn] = useState<Date | undefined>(undefined);
   const [checkOut, setCheckOut] = useState<Date | undefined>(undefined);
+  const [sortBy, setSortBy] = useState<string>("recommended");
+  const [currentPage, setCurrentPage] = useState(1);
   const [filters, setFilters] = useState<SearchFilters>({
     location: searchParams.get("location") || "",
     guests: searchParams.get("guests") ? parseInt(searchParams.get("guests") as string) : undefined,
@@ -73,19 +87,40 @@ const PropertyListing = () => {
     if (searchParams.get("checkOut")) {
       setCheckOut(new Date(searchParams.get("checkOut") as string));
     }
+    if (searchParams.get("page")) {
+      setCurrentPage(parseInt(searchParams.get("page") as string));
+    }
   }, [searchParams]);
 
   useEffect(() => {
     if (properties) {
-      setFilteredProperties(properties);
+      let sorted = [...properties];
+      
+      // Apply sorting
+      switch (sortBy) {
+        case "price-asc":
+          sorted.sort((a, b) => a.price - b.price);
+          break;
+        case "price-desc":
+          sorted.sort((a, b) => b.price - a.price);
+          break;
+        case "rating":
+          sorted.sort((a, b) => b.rating - a.rating);
+          break;
+        // Default is "recommended" - no specific sorting
+      }
+      
+      setFilteredProperties(sorted);
     }
-  }, [properties]);
+  }, [properties, sortBy]);
 
   const handleFilterChange = (key: keyof SearchFilters, value: any) => {
     setFilters((prev) => ({
       ...prev,
       [key]: value,
     }));
+    // Reset to first page when filters change
+    setCurrentPage(1);
   };
 
   const handleAmenityToggle = (amenity: string) => {
@@ -100,6 +135,12 @@ const PropertyListing = () => {
         amenities: newAmenities,
       };
     });
+    // Reset to first page when filters change
+    setCurrentPage(1);
+  };
+
+  const handleSortChange = (value: string) => {
+    setSortBy(value);
   };
 
   const clearFilters = () => {
@@ -116,6 +157,65 @@ const PropertyListing = () => {
     });
     setCheckIn(undefined);
     setCheckOut(undefined);
+    setSortBy("recommended");
+    setCurrentPage(1);
+  };
+
+  // Calculate pagination values
+  const totalPages = filteredProperties.length 
+    ? Math.ceil(filteredProperties.length / ITEMS_PER_PAGE) 
+    : 1;
+  
+  // Get current page of properties
+  const currentProperties = filteredProperties.slice(
+    (currentPage - 1) * ITEMS_PER_PAGE,
+    currentPage * ITEMS_PER_PAGE
+  );
+  
+  // Function to change page
+  const handlePageChange = (page: number) => {
+    setCurrentPage(page);
+    // Scroll to top
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+    
+    // Update URL params
+    const newParams = new URLSearchParams(searchParams);
+    newParams.set("page", page.toString());
+    setSearchParams(newParams);
+  };
+
+  // Generate page numbers for pagination
+  const getPageNumbers = () => {
+    const pages = [];
+    const maxPagesToShow = 5; // Show max 5 page numbers
+    
+    if (totalPages <= maxPagesToShow) {
+      // Show all pages if total pages <= maxPagesToShow
+      for (let i = 1; i <= totalPages; i++) {
+        pages.push(i);
+      }
+    } else {
+      // Always show first page
+      pages.push(1);
+      
+      // Show ellipsis or pages
+      if (currentPage <= 3) {
+        pages.push(2, 3, 4);
+        pages.push("ellipsis");
+      } else if (currentPage >= totalPages - 2) {
+        pages.push("ellipsis");
+        pages.push(totalPages - 3, totalPages - 2, totalPages - 1);
+      } else {
+        pages.push("ellipsis");
+        pages.push(currentPage - 1, currentPage, currentPage + 1);
+        pages.push("ellipsis");
+      }
+      
+      // Always show last page
+      pages.push(totalPages);
+    }
+    
+    return pages;
   };
 
   return (
@@ -343,7 +443,7 @@ const PropertyListing = () => {
             )}
           </div>
           
-          {/* Results Count */}
+          {/* Results Count and Sort Options */}
           <div className="mb-6 flex justify-between items-center">
             <h1 className="text-2xl font-bold text-purple-900 dark:text-purple-100">
               {isLoading ? (
@@ -354,7 +454,11 @@ const PropertyListing = () => {
                 </>
               )}
             </h1>
-            <Select defaultValue="recommended">
+            <Select 
+              defaultValue="recommended" 
+              value={sortBy}
+              onValueChange={handleSortChange}
+            >
               <SelectTrigger className="w-[180px] border-purple-200 dark:border-gray-600">
                 <SelectValue placeholder="Sort by" />
               </SelectTrigger>
@@ -384,9 +488,9 @@ const PropertyListing = () => {
           )}
           
           {/* Property Grid */}
-          {!isLoading && filteredProperties.length > 0 && (
+          {!isLoading && currentProperties.length > 0 && (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 animate-fade-in">
-              {filteredProperties.map((property, index) => (
+              {currentProperties.map((property, index) => (
                 <div 
                   key={property.id}
                   className="animate-fade-up opacity-0 hover:-translate-y-1 transition-all duration-300"
@@ -395,6 +499,52 @@ const PropertyListing = () => {
                   <PropertyCard property={property} />
                 </div>
               ))}
+            </div>
+          )}
+          
+          {/* Pagination */}
+          {!isLoading && filteredProperties.length > ITEMS_PER_PAGE && (
+            <div className="mt-12">
+              <Pagination>
+                <PaginationContent>
+                  {/* Previous page button */}
+                  {currentPage > 1 && (
+                    <PaginationItem>
+                      <PaginationPrevious 
+                        onClick={() => handlePageChange(currentPage - 1)}
+                        className="cursor-pointer" 
+                      />
+                    </PaginationItem>
+                  )}
+                  
+                  {/* Page numbers */}
+                  {getPageNumbers().map((page, index) => (
+                    <PaginationItem key={index}>
+                      {page === "ellipsis" ? (
+                        <PaginationEllipsis />
+                      ) : (
+                        <PaginationLink
+                          isActive={page === currentPage}
+                          onClick={() => handlePageChange(page as number)}
+                          className="cursor-pointer"
+                        >
+                          {page}
+                        </PaginationLink>
+                      )}
+                    </PaginationItem>
+                  ))}
+                  
+                  {/* Next page button */}
+                  {currentPage < totalPages && (
+                    <PaginationItem>
+                      <PaginationNext 
+                        onClick={() => handlePageChange(currentPage + 1)} 
+                        className="cursor-pointer"
+                      />
+                    </PaginationItem>
+                  )}
+                </PaginationContent>
+              </Pagination>
             </div>
           )}
           
