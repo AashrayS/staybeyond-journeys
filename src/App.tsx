@@ -12,9 +12,40 @@ import TransportPage from "./pages/TransportPage";
 import NotFound from "./pages/NotFound";
 import Auth from "./pages/Auth";
 import AddProperty from "./pages/AddProperty";
-import { useAuth } from "./contexts/AuthContext";
 
 const queryClient = new QueryClient();
+
+// Create App component that includes AuthProvider
+const App = () => {
+  return (
+    <QueryClientProvider client={queryClient}>
+      <BrowserRouter>
+        <AuthProvider>
+          <TooltipProvider>
+            <Toaster />
+            <Sonner />
+            <Routes>
+              <Route path="/" element={<Index />} />
+              <Route path="/properties" element={<PropertyListing />} />
+              <Route path="/properties/:id" element={<PropertyDetail />} />
+              <Route path="/transport" element={<TransportPage />} />
+              <Route path="/auth" element={<Auth />} />
+              <Route 
+                path="/add-property" 
+                element={
+                  <ProtectedRoute>
+                    <AddProperty />
+                  </ProtectedRoute>
+                } 
+              />
+              <Route path="*" element={<NotFound />} />
+            </Routes>
+          </TooltipProvider>
+        </AuthProvider>
+      </BrowserRouter>
+    </QueryClientProvider>
+  );
+};
 
 // Protected route component
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
@@ -26,30 +57,7 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   return <>{children}</>;
 };
 
-const App = () => (
-  <QueryClientProvider client={queryClient}>
-    <BrowserRouter>
-      <AuthProvider>
-        <TooltipProvider>
-          <Toaster />
-          <Sonner />
-          <Routes>
-            <Route path="/" element={<Index />} />
-            <Route path="/properties" element={<PropertyListing />} />
-            <Route path="/properties/:id" element={<PropertyDetail />} />
-            <Route path="/transport" element={<TransportPage />} />
-            <Route path="/auth" element={<Auth />} />
-            <Route path="/add-property" element={
-              <ProtectedRoute>
-                <AddProperty />
-              </ProtectedRoute>
-            } />
-            <Route path="*" element={<NotFound />} />
-          </Routes>
-        </TooltipProvider>
-      </AuthProvider>
-    </BrowserRouter>
-  </QueryClientProvider>
-);
+// Import useAuth at the top of the file
+import { useAuth } from "./contexts/AuthContext";
 
 export default App;
