@@ -162,7 +162,7 @@ const PropertyDetail = () => {
     setBookingInProgress(true);
     
     try {
-      // Prepare booking data - fix status type to be a literal
+      // Updated: Ensure dates are properly formatted
       const bookingData = {
         propertyId: property.id,
         userId: user.id,
@@ -216,7 +216,7 @@ const PropertyDetail = () => {
     try {
       const selectedTransport = transportationOptions.find(t => t.id === transportType);
       
-      // Prepare transportation data - fix status type to be a literal
+      // Updated: Ensure proper type and data format
       const transportData = {
         bookingId: bookingId,
         type: transportType as "cab" | "auto" | "other",

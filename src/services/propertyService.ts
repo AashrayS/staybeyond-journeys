@@ -1,3 +1,4 @@
+
 import { supabase } from "@/integrations/supabase/client";
 import { Property, Booking, Review, SearchFilters, Transportation } from "@/types";
 import { properties as mockProperties, bookings as mockBookings } from "@/data/mockData";
@@ -373,18 +374,40 @@ export const createBooking = async (bookingData: Partial<Booking>): Promise<Book
   try {
     console.log("Creating booking with data:", bookingData);
     
-    // Convert from app format to Supabase format
+    // Fix: Convert date objects to ISO strings if they aren't already
+    const startDate = typeof bookingData.startDate === 'object' ? 
+      bookingData.startDate.toISOString() : 
+      bookingData.startDate || bookingData.start_date;
+    
+    const endDate = typeof bookingData.endDate === 'object' ? 
+      bookingData.endDate.toISOString() : 
+      bookingData.endDate || bookingData.end_date;
+    
+    // Ensure we have property ID in correct format
+    const propertyId = bookingData.propertyId || bookingData.property_id;
+    
+    // Ensure we have user ID in correct format
+    const userId = bookingData.userId || bookingData.user_id;
+    
+    // Convert from app format to Supabase format with proper data types
     const supabaseBookingData = {
-      property_id: bookingData.propertyId || bookingData.property_id,
-      user_id: bookingData.userId || bookingData.user_id,
-      start_date: bookingData.startDate || bookingData.start_date,
-      end_date: bookingData.endDate || bookingData.end_date,
+      property_id: propertyId,
+      user_id: userId,
+      start_date: startDate,
+      end_date: endDate,
       total_price: bookingData.totalPrice,
       status: bookingData.status || "confirmed",
       guests: bookingData.guests || 1
     };
 
     console.log("Formatted booking data for Supabase:", supabaseBookingData);
+
+    // Validate required fields before inserting
+    if (!supabaseBookingData.property_id || !supabaseBookingData.user_id || 
+        !supabaseBookingData.start_date || !supabaseBookingData.end_date) {
+      console.error("Missing required booking fields:", supabaseBookingData);
+      throw new Error("Missing required booking fields");
+    }
 
     const { data, error } = await supabase
       .from("bookings")
@@ -419,10 +442,32 @@ export const createTransportation = async (transportationData: Partial<Transport
   try {
     console.log("Creating transportation with data:", transportationData);
     
-    // Convert from app format to Supabase format
-    const supabaseTransportationData = mapAppTransportationToSupabaseTransportation(transportationData as Transportation);
+    // Fix: Ensure pickup time is properly formatted
+    const pickupTime = typeof transportationData.pickupTime === 'object' ?
+      transportationData.pickupTime.toISOString() :
+      transportationData.pickupTime || transportationData.pickup_time;
+    
+    // Create a valid transportation object with all required fields
+    const supabaseTransportationData = {
+      booking_id: transportationData.bookingId || transportationData.booking_id,
+      type: transportationData.type,
+      pickup_location: transportationData.pickupLocation || transportationData.pickup_location,
+      dropoff_location: transportationData.dropoffLocation || transportationData.dropoff_location,
+      pickup_time: pickupTime,
+      estimated_price: transportationData.estimatedPrice,
+      status: transportationData.status || "confirmed"
+    };
     
     console.log("Formatted transportation data for Supabase:", supabaseTransportationData);
+
+    // Validate required fields
+    if (!supabaseTransportationData.pickup_location || 
+        !supabaseTransportationData.dropoff_location || 
+        !supabaseTransportationData.pickup_time || 
+        !supabaseTransportationData.type) {
+      console.error("Missing required transportation fields:", supabaseTransportationData);
+      throw new Error("Missing required transportation fields");
+    }
 
     const { data, error } = await supabase
       .from("transportation")
