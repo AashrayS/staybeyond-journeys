@@ -59,19 +59,27 @@
   body {
     @apply bg-background text-foreground font-sans antialiased;
   }
+  
+  button, a {
+    @apply transition-all duration-200;
+  }
+  
+  h1, h2, h3, h4, h5, h6 {
+    @apply font-medium tracking-tight;
+  }
 }
 
 /* Custom Animations and Effects */
 .glass-card {
-  background: rgba(255, 255, 255, 0.3);
-  backdrop-filter: blur(10px);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.05);
+  background: rgba(255, 255, 255, 0.5);
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.07);
 }
 
 .glass-card-dark {
   background: rgba(30, 30, 35, 0.7);
-  backdrop-filter: blur(10px);
+  backdrop-filter: blur(12px);
   border: 1px solid rgba(255, 255, 255, 0.05);
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
 }
@@ -158,4 +166,61 @@ html {
   justify-content: center;
   color: #94b8b0;
   font-size: 14px;
+}
+
+/* Make form elements more polished */
+input, textarea, select {
+  @apply outline-none focus:ring-2 focus:ring-primary/50 transition-all duration-200;
+}
+
+/* Better button hover states */
+.btn-hover-effect {
+  @apply relative overflow-hidden;
+}
+
+.btn-hover-effect::after {
+  content: '';
+  @apply absolute inset-0 bg-white/10 opacity-0 transition-opacity duration-200;
+}
+
+.btn-hover-effect:hover::after {
+  @apply opacity-100;
+}
+
+/* Improve card design */
+.enhanced-card {
+  @apply transition-all duration-300 hover:shadow-lg border border-border/50 rounded-lg overflow-hidden;
+}
+
+/* Professional loading effects */
+.skeleton-loading {
+  @apply animate-pulse bg-gradient-to-r from-muted/50 via-muted/30 to-muted/50 bg-[length:400%_100%] rounded;
+  animation: shimmer 2s infinite;
+}
+
+@keyframes shimmer {
+  0% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0% 50%;
+  }
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  @apply bg-primary/30 rounded-full;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  @apply bg-primary/50;
 }

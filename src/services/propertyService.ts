@@ -1,4 +1,3 @@
-
 import { supabase } from "@/integrations/supabase/client";
 import { Property, Booking, Review, SearchFilters, Transportation } from "@/types";
 import { properties as mockProperties, bookings as mockBookings } from "@/data/mockData";
@@ -374,23 +373,23 @@ export const createBooking = async (bookingData: Partial<Booking>): Promise<Book
   try {
     console.log("Creating booking with data:", bookingData);
     
-    // Fix: Handle null values safely with explicit type checking
+    // Fix: Handle null values safely by using nullish coalescing
+    // For startDate
     let startDate: string;
-    if (bookingData.startDate !== null && bookingData.startDate !== undefined) {
-      // Now TypeScript knows startDate is not null or undefined inside this block
-      startDate = typeof bookingData.startDate === 'object' 
-        ? bookingData.startDate.toISOString() 
-        : bookingData.startDate;
+    if (typeof bookingData.startDate === 'object' && bookingData.startDate !== null) {
+      startDate = bookingData.startDate.toISOString();
+    } else if (typeof bookingData.startDate === 'string') {
+      startDate = bookingData.startDate;
     } else {
       startDate = bookingData.start_date || new Date().toISOString();
     }
     
+    // For endDate
     let endDate: string;
-    if (bookingData.endDate !== null && bookingData.endDate !== undefined) {
-      // Now TypeScript knows endDate is not null or undefined inside this block
-      endDate = typeof bookingData.endDate === 'object' 
-        ? bookingData.endDate.toISOString() 
-        : bookingData.endDate;
+    if (typeof bookingData.endDate === 'object' && bookingData.endDate !== null) {
+      endDate = bookingData.endDate.toISOString();
+    } else if (typeof bookingData.endDate === 'string') {
+      endDate = bookingData.endDate;
     } else {
       endDate = bookingData.end_date || new Date(Date.now() + 86400000).toISOString(); // Default to tomorrow
     }
@@ -454,13 +453,12 @@ export const createTransportation = async (transportationData: Partial<Transport
   try {
     console.log("Creating transportation with data:", transportationData);
     
-    // Fix: Handle null pickup time with proper explicit type checking
+    // Fix: Handle null pickup time with better type checking
     let pickupTime: string;
-    if (transportationData.pickupTime !== null && transportationData.pickupTime !== undefined) {
-      // Now TypeScript knows pickupTime is not null or undefined inside this block
-      pickupTime = typeof transportationData.pickupTime === 'object'
-        ? transportationData.pickupTime.toISOString()
-        : transportationData.pickupTime;
+    if (typeof transportationData.pickupTime === 'object' && transportationData.pickupTime !== null) {
+      pickupTime = transportationData.pickupTime.toISOString();
+    } else if (typeof transportationData.pickupTime === 'string') {
+      pickupTime = transportationData.pickupTime;
     } else {
       pickupTime = transportationData.pickup_time || new Date().toISOString();
     }

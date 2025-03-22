@@ -5,6 +5,7 @@ import Hero from "../components/Hero";
 import FeaturedProperties from "../components/FeaturedProperties";
 import TransportOptions from "../components/TransportOptions";
 import Footer from "../components/Footer";
+import { Helmet } from "react-helmet";
 
 const Index = () => {
   useEffect(() => {
@@ -14,6 +15,10 @@ const Index = () => {
 
   return (
     <div className="min-h-screen flex flex-col">
+      <Helmet>
+        <title>Stayz India | Find Your Perfect Rental Property</title>
+        <meta name="description" content="Book unique homes, vacation rentals, and experiences across India. Find the perfect place for your next trip." />
+      </Helmet>
       <Header />
       <main className="flex-grow">
         <Hero />

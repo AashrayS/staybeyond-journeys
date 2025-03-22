@@ -12,8 +12,17 @@ import TransportPage from "./pages/TransportPage";
 import NotFound from "./pages/NotFound";
 import Auth from "./pages/Auth";
 import AddProperty from "./pages/AddProperty";
+import { MotionConfig } from "framer-motion";
 
-const queryClient = new QueryClient();
+// Create a client
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      refetchOnWindowFocus: false,
+      retry: 1,
+    },
+  },
+});
 
 // Create App component that includes AuthProvider
 const App = () => {
@@ -21,26 +30,28 @@ const App = () => {
     <QueryClientProvider client={queryClient}>
       <BrowserRouter>
         <AuthProvider>
-          <TooltipProvider>
-            <Toaster />
-            <Sonner />
-            <Routes>
-              <Route path="/" element={<Index />} />
-              <Route path="/properties" element={<PropertyListing />} />
-              <Route path="/properties/:id" element={<PropertyDetail />} />
-              <Route path="/transport" element={<TransportPage />} />
-              <Route path="/auth" element={<Auth />} />
-              <Route 
-                path="/add-property" 
-                element={
-                  <ProtectedRoute>
-                    <AddProperty />
-                  </ProtectedRoute>
-                } 
-              />
-              <Route path="*" element={<NotFound />} />
-            </Routes>
-          </TooltipProvider>
+          <MotionConfig reducedMotion="user">
+            <TooltipProvider>
+              <Toaster />
+              <Sonner position="top-right" closeButton />
+              <Routes>
+                <Route path="/" element={<Index />} />
+                <Route path="/properties" element={<PropertyListing />} />
+                <Route path="/properties/:id" element={<PropertyDetail />} />
+                <Route path="/transport" element={<TransportPage />} />
+                <Route path="/auth" element={<Auth />} />
+                <Route 
+                  path="/add-property" 
+                  element={
+                    <ProtectedRoute>
+                      <AddProperty />
+                    </ProtectedRoute>
+                  } 
+                />
+                <Route path="*" element={<NotFound />} />
+              </Routes>
+            </TooltipProvider>
+          </MotionConfig>
         </AuthProvider>
       </BrowserRouter>
     </QueryClientProvider>

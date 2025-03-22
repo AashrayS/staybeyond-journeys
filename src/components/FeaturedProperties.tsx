@@ -8,6 +8,7 @@ import { cn } from "@/lib/utils";
 import { fetchFeaturedProperties } from "@/services/propertyService";
 import { Property } from "@/types";
 import { useQuery } from "@tanstack/react-query";
+import { motion } from "framer-motion";
 
 const FeaturedProperties = () => {
   const [isVisible, setIsVisible] = useState(false);
@@ -38,6 +39,21 @@ const FeaturedProperties = () => {
       window.removeEventListener('scroll', handleScroll);
     };
   }, []);
+
+  const container = {
+    hidden: { opacity: 0 },
+    show: {
+      opacity: 1,
+      transition: {
+        staggerChildren: 0.15,
+      }
+    }
+  };
+
+  const item = {
+    hidden: { opacity: 0, y: 20 },
+    show: { opacity: 1, y: 0, transition: { duration: 0.6 } }
+  };
 
   if (isLoading) {
     return (
@@ -71,10 +87,12 @@ const FeaturedProperties = () => {
   return (
     <section id="featured-section" className="py-16 md:py-24 px-4 bg-gradient-to-br from-white to-teal-50 dark:from-gray-900 dark:to-teal-900/10">
       <div className="container mx-auto max-w-7xl">
-        <div className={cn(
-          "flex flex-col md:flex-row items-start md:items-end justify-between mb-10 transition-all duration-700 transform",
-          isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-10"
-        )}>
+        <motion.div 
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: isVisible ? 1 : 0, y: isVisible ? 0 : 20 }}
+          transition={{ duration: 0.6 }}
+          className="flex flex-col md:flex-row items-start md:items-end justify-between mb-10"
+        >
           <div>
             <h2 className="text-3xl md:text-4xl font-bold mb-3">Featured Properties</h2>
             <p className="text-muted-foreground max-w-2xl">
@@ -87,25 +105,21 @@ const FeaturedProperties = () => {
               <ChevronRight className="h-4 w-4" />
             </Link>
           </Button>
-        </div>
+        </motion.div>
 
         {featuredProperties && featuredProperties.length > 0 ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-8">
-            {featuredProperties.map((property, index) => (
-              <div 
-                key={property.id} 
-                className={cn(
-                  "transition-all duration-700 transform",
-                  isVisible 
-                    ? "opacity-100 translate-y-0" 
-                    : "opacity-0 translate-y-10"
-                )}
-                style={{ transitionDelay: `${index * 150}ms` }}
-              >
+          <motion.div 
+            variants={container}
+            initial="hidden"
+            animate={isVisible ? "show" : "hidden"}
+            className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-8"
+          >
+            {featuredProperties.map((property) => (
+              <motion.div key={property.id} variants={item}>
                 <PropertyCard property={property} featured />
-              </div>
+              </motion.div>
             ))}
-          </div>
+          </motion.div>
         ) : (
           <div className="text-center py-16">
             <p className="text-muted-foreground">No featured properties available</p>
