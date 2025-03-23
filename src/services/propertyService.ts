@@ -4,25 +4,6 @@ import { supabase } from "@/integrations/supabase/client";
 import { Property, Booking, Transportation, SearchFilters, User } from "@/types";
 import { Json } from "@/integrations/supabase/types";
 
-// Function to fetch all properties
-export const fetchProperties = async (): Promise<Property[]> => {
-  try {
-    const { data, error } = await supabase
-      .from("properties")
-      .select("*");
-
-    if (error) {
-      console.error("Error fetching properties:", error);
-      return [];
-    }
-
-    return data as unknown as Property[];
-  } catch (error) {
-    console.error("Error fetching properties:", error);
-    return [];
-  }
-};
-
 // Helper function to safely process location data
 const processLocationData = (locationData: Json | null): Property['location'] => {
   // Default location object if data is invalid
@@ -34,22 +15,29 @@ const processLocationData = (locationData: Json | null): Property['location'] =>
   // If locationData is null or undefined, return default
   if (!locationData) return defaultLocation;
   
-  // If locationData is an object, extract properties safely
-  if (typeof locationData === 'object' && locationData !== null && !Array.isArray(locationData)) {
-    return {
-      city: typeof locationData.city === 'string' ? locationData.city : 'Unknown',
-      country: typeof locationData.country === 'string' ? locationData.country : 'Unknown',
-      address: typeof locationData.address === 'string' ? locationData.address : undefined,
-      coordinates: locationData.coordinates && 
-        typeof locationData.coordinates === 'object' && 
-        !Array.isArray(locationData.coordinates) &&
-        typeof locationData.coordinates.lat === 'number' && 
-        typeof locationData.coordinates.lng === 'number' ? 
-        {
-          lat: locationData.coordinates.lat,
-          lng: locationData.coordinates.lng
-        } : undefined
-    };
+  // Try to parse the location data safely
+  try {
+    // If locationData is an object, extract properties safely
+    if (typeof locationData === 'object' && locationData !== null && !Array.isArray(locationData)) {
+      const locationObj = locationData as Record<string, any>;
+      
+      return {
+        city: typeof locationObj.city === 'string' ? locationObj.city : 'Unknown',
+        country: typeof locationObj.country === 'string' ? locationObj.country : 'Unknown',
+        address: typeof locationObj.address === 'string' ? locationObj.address : undefined,
+        coordinates: locationObj.coordinates && 
+          typeof locationObj.coordinates === 'object' && 
+          !Array.isArray(locationObj.coordinates) &&
+          typeof locationObj.coordinates.lat === 'number' && 
+          typeof locationObj.coordinates.lng === 'number' ? 
+          {
+            lat: locationObj.coordinates.lat,
+            lng: locationObj.coordinates.lng
+          } : undefined
+      };
+    }
+  } catch (error) {
+    console.error("Error processing location data:", error);
   }
   
   // If we get here, locationData is not in the expected format
@@ -68,6 +56,61 @@ const createHostObject = (hostId: string | null): User => {
     listings: [],
     bookings: []
   };
+};
+
+// Function to fetch all properties
+export const fetchProperties = async (): Promise<Property[]> => {
+  try {
+    const { data, error } = await supabase
+      .from("properties")
+      .select("*");
+
+    if (error) {
+      console.error("Error fetching properties:", error);
+      return [];
+    }
+
+    if (!data || !Array.isArray(data) || data.length === 0) {
+      console.log("No properties found or invalid data format");
+      return [];
+    }
+
+    // Transform the data to match our Property type
+    const properties: Property[] = data.map(item => {
+      // Process location data safely
+      const location = processLocationData(item.location);
+      
+      // Create a proper host object
+      const host = createHostObject(item.host_id);
+
+      // Map database fields to our Property type
+      return {
+        id: item.id || "",
+        title: item.title || "Unnamed Property",
+        description: item.description || "",
+        location: location,
+        price: typeof item.price === 'number' ? item.price : 0,
+        currency: item.currency || "INR",
+        images: Array.isArray(item.images) ? item.images : [],
+        amenities: Array.isArray(item.amenities) ? item.amenities : [],
+        host_id: item.host_id,
+        host: host,
+        rating: typeof item.rating === 'number' ? item.rating : 4.5,
+        bedrooms: typeof item.bedrooms === 'number' ? item.bedrooms : 1,
+        bathrooms: typeof item.bathrooms === 'number' ? item.bathrooms : 1,
+        capacity: typeof item.capacity === 'number' ? item.capacity : 1,
+        propertyType: item.property_type || "Unknown",
+        property_type: item.property_type || "Unknown", // For compatibility
+        featured: Boolean(item.featured),
+        reviews: []
+      } as Property;
+    });
+
+    return properties;
+  } catch (error) {
+    console.error("Error fetching properties:", error);
+    return [];
+  }
 };
 
 // Function to fetch all properties with filters
@@ -109,16 +152,22 @@ export const fetchAllProperties = async (filters?: SearchFilters): Promise<Prope
       return [];
     }
 
-    // Ensure all returned properties have required fields
-    const properties = (data as any[]).map(item => {
+    if (!data || !Array.isArray(data) || data.length === 0) {
+      console.log("No properties found or invalid data format");
+      return [];
+    }
+
+    // Transform the data to match our Property type
+    const properties: Property[] = data.map(item => {
       // Process location data safely
       const location = processLocationData(item.location);
       
       // Create a proper host object
       const host = createHostObject(item.host_id);
 
+      // Map database fields to our Property type
       return {
-        id: item.id,
+        id: item.id || "",
         title: item.title || "Unnamed Property",
         description: item.description || "",
         location: location,
@@ -126,6 +175,7 @@ export const fetchAllProperties = async (filters?: SearchFilters): Promise<Prope
         currency: item.currency || "INR",
         images: Array.isArray(item.images) ? item.images : [],
         amenities: Array.isArray(item.amenities) ? item.amenities : [],
+        host_id: item.host_id,
         host: host,
         rating: typeof item.rating === 'number' ? item.rating : 4.5,
         bedrooms: typeof item.bedrooms === 'number' ? item.bedrooms : 1,
@@ -158,16 +208,22 @@ export const fetchFeaturedProperties = async (): Promise<Property[]> => {
       return [];
     }
 
-    // Ensure all returned properties have required fields
-    const properties = (data as any[]).map(item => {
+    if (!data || !Array.isArray(data) || data.length === 0) {
+      console.log("No featured properties found or invalid data format");
+      return [];
+    }
+
+    // Transform the data to match our Property type
+    const properties: Property[] = data.map(item => {
       // Process location data safely
       const location = processLocationData(item.location);
       
       // Create a proper host object
       const host = createHostObject(item.host_id);
 
+      // Map database fields to our Property type
       return {
-        id: item.id,
+        id: item.id || "",
         title: item.title || "Unnamed Property",
         description: item.description || "",
         location: location,
@@ -175,6 +231,7 @@ export const fetchFeaturedProperties = async (): Promise<Property[]> => {
         currency: item.currency || "INR",
         images: Array.isArray(item.images) ? item.images : [],
         amenities: Array.isArray(item.amenities) ? item.amenities : [],
+        host_id: item.host_id,
         host: host,
         rating: typeof item.rating === 'number' ? item.rating : 4.5,
         bedrooms: typeof item.bedrooms === 'number' ? item.bedrooms : 1,
@@ -197,6 +254,8 @@ export const fetchFeaturedProperties = async (): Promise<Property[]> => {
 // Function to fetch a property by its ID
 export const fetchPropertyById = async (id: string): Promise<Property | null> => {
   try {
+    console.log(`Fetching property with ID: ${id}`);
+    
     const { data, error } = await supabase
       .from("properties")
       .select("*")
@@ -209,6 +268,7 @@ export const fetchPropertyById = async (id: string): Promise<Property | null> =>
     }
 
     if (!data) {
+      console.log(`No property found with ID ${id}`);
       return null;
     }
 
@@ -228,6 +288,7 @@ export const fetchPropertyById = async (id: string): Promise<Property | null> =>
       currency: data.currency || "INR",
       images: Array.isArray(data.images) ? data.images : [],
       amenities: Array.isArray(data.amenities) ? data.amenities : [],
+      host_id: data.host_id,
       host: host,
       rating: typeof data.rating === 'number' ? data.rating : 4.5,
       bedrooms: typeof data.bedrooms === 'number' ? data.bedrooms : 1,
@@ -239,6 +300,7 @@ export const fetchPropertyById = async (id: string): Promise<Property | null> =>
       reviews: [] // Would normally fetch reviews in a separate query or join
     };
 
+    console.log("Successfully fetched property:", property);
     return property;
   } catch (error) {
     console.error(`Error fetching property with ID ${id}:`, error);
