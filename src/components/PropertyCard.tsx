@@ -8,9 +8,10 @@ import { AspectRatio } from "@/components/ui/aspect-ratio";
 
 interface PropertyCardProps {
   property: Property;
+  featured?: boolean; // Add optional featured prop
 }
 
-const PropertyCard = ({ property }: PropertyCardProps) => {
+const PropertyCard = ({ property, featured }: PropertyCardProps) => {
   // Provide fallback values for missing data
   const {
     id,
@@ -42,7 +43,7 @@ const PropertyCard = ({ property }: PropertyCardProps) => {
       to={`/properties/${id}`}
       className="block transition-all duration-300 hover:shadow-lg rounded-xl"
     >
-      <Card className="border-purple-100 dark:border-gray-700 overflow-hidden h-full flex flex-col">
+      <Card className={`border-purple-100 dark:border-gray-700 overflow-hidden h-full flex flex-col ${featured ? 'border-2 border-purple-300' : ''}`}>
         <CardHeader className="p-0">
           <AspectRatio ratio={4/3} className="bg-gray-100">
             <img
@@ -55,6 +56,13 @@ const PropertyCard = ({ property }: PropertyCardProps) => {
               }}
             />
           </AspectRatio>
+          {featured && (
+            <Badge 
+              className="absolute top-3 left-3 bg-purple-600 hover:bg-purple-700"
+            >
+              Featured
+            </Badge>
+          )}
           <Badge 
             className="absolute top-3 right-3 bg-purple-600 hover:bg-purple-700"
           >

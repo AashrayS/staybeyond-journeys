@@ -33,6 +33,29 @@ const createHostObject = (hostId: string, hostName?: string, hostAvatar?: string
 // Converts raw Supabase property to the app's Property type
 const convertToPropertyType = (rawProperty: any): Property => {
   console.log("Converting raw property:", rawProperty);
+  
+  // Handle null or undefined properties
+  if (!rawProperty) {
+    console.error("Received null or undefined property");
+    return {
+      id: "error-" + Math.random().toString(),
+      title: "Error Loading Property",
+      description: "",
+      location: { city: "Unknown", country: "India" },
+      price: 0,
+      images: [],
+      amenities: [],
+      host: createHostObject("unknown"),
+      rating: 0,
+      bedrooms: 0,
+      bathrooms: 0,
+      capacity: 0,
+      propertyType: "Unknown",
+      featured: false,
+      reviews: []
+    };
+  }
+  
   return {
     id: rawProperty.id || '',
     title: rawProperty.title || 'Unnamed Property',
@@ -65,11 +88,11 @@ export async function fetchSupabaseProperties(filters?: SearchFilters): Promise<
     
     // Apply filters if provided
     if (filters) {
-      if (filters.location) {
-        query = query.filter('location->city', 'ilike', `%${filters.location}%`);
+      if (filters.location && typeof filters.location === 'string' && filters.location.trim() !== '') {
+        query = query.ilike('location->>city', `%${filters.location}%`);
       }
       
-      if (filters.guests) {
+      if (filters.guests && typeof filters.guests === 'number' && filters.guests > 0) {
         query = query.gte('capacity', filters.guests);
       }
       
@@ -82,11 +105,11 @@ export async function fetchSupabaseProperties(filters?: SearchFilters): Promise<
         }
       }
       
-      if (filters.propertyType) {
+      if (filters.propertyType && typeof filters.propertyType === 'string') {
         query = query.eq('property_type', filters.propertyType);
       }
       
-      if (filters.bedrooms) {
+      if (filters.bedrooms && typeof filters.bedrooms === 'number') {
         query = query.gte('bedrooms', filters.bedrooms);
       }
     }
