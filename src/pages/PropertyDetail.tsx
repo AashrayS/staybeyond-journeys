@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useParams, Link } from "react-router-dom";
 import Header from "../components/Header";
@@ -64,6 +63,7 @@ import { Property } from "../types";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { createBooking, createTransportation, fetchPropertyById } from "@/services/propertyService";
 import { useAuth } from "@/contexts/AuthContext";
+import { prepareBookingData } from "@/utils/bookingUtils";
 
 const PropertyDetail = () => {
   const { id } = useParams();
@@ -162,24 +162,23 @@ const PropertyDetail = () => {
     setBookingInProgress(true);
     
     try {
-      // Updated: Ensure dates are properly formatted
-      const bookingData = {
-        propertyId: property.id,
-        userId: user.id,
-        startDate: checkIn.toISOString(),
-        endDate: checkOut.toISOString(),
-        totalPrice: totalPrice,
-        status: "confirmed" as "confirmed" | "pending" | "completed" | "cancelled",
-        guests: guests,
-      };
+      const bookingData = prepareBookingData(
+        property.id,
+        property,
+        user.id,
+        user,
+        checkIn.toISOString(),
+        checkOut.toISOString(),
+        totalPrice,
+        "confirmed",
+        guests
+      );
       
       console.log("Creating booking with data:", bookingData);
       
-      // Call the service to create the booking
       const newBooking = await createBooking(bookingData);
       
       if (newBooking) {
-        // Set booking ID for display
         setBookingId(newBooking.id);
         setBookingSuccess(true);
         
@@ -216,7 +215,6 @@ const PropertyDetail = () => {
     try {
       const selectedTransport = transportationOptions.find(t => t.id === transportType);
       
-      // Updated: Ensure proper type and data format
       const transportData = {
         bookingId: bookingId,
         type: transportType as "cab" | "auto" | "other",
@@ -229,7 +227,6 @@ const PropertyDetail = () => {
       
       console.log("Creating transportation with data:", transportData);
       
-      // Call the service to create the transportation
       const newTransportation = await createTransportation(transportData);
       
       if (newTransportation) {
