@@ -2,7 +2,7 @@
 // src/services/propertyService.ts
 
 import { supabase } from "@/integrations/supabase/client";
-import { Property, Booking, Transportation, SearchFilters } from "@/types";
+import { Property, Booking, Transportation, SearchFilters, User } from "@/types";
 
 // Function to fetch all properties
 export const fetchProperties = async (): Promise<Property[]> => {
@@ -63,28 +63,51 @@ export const fetchAllProperties = async (filters?: SearchFilters): Promise<Prope
     }
 
     // Ensure all returned properties have required fields
-    const properties = (data as any[]).map(item => ({
-      id: item.id,
-      title: item.title,
-      description: item.description,
-      location: item.location,
-      price: item.price,
-      currency: item.currency || "INR",
-      images: item.images || [],
-      amenities: item.amenities || [],
-      host: {
-        id: item.host_id,
-        name: "Host Name", // This would ideally come from a join query
+    const properties = (data as any[]).map(item => {
+      // Ensure location is properly formatted
+      const locationData = item.location || {};
+      const location = {
+        city: typeof locationData.city === 'string' ? locationData.city : 'Unknown',
+        country: typeof locationData.country === 'string' ? locationData.country : 'Unknown',
+        address: typeof locationData.address === 'string' ? locationData.address : undefined,
+        coordinates: locationData.coordinates && 
+          typeof locationData.coordinates.lat === 'number' && 
+          typeof locationData.coordinates.lng === 'number' ? 
+          locationData.coordinates : undefined
+      };
+
+      // Create a proper host object
+      const host: User = {
+        id: item.host_id || "",
+        name: "Host Name", // Default name
         avatar: "https://ui-avatars.com/api/?name=Host",
-      },
-      rating: item.rating || 4.5,
-      bedrooms: item.bedrooms,
-      bathrooms: item.bathrooms,
-      capacity: item.capacity,
-      propertyType: item.property_type,
-      featured: item.featured || false,
-      reviews: []
-    }));
+        isHost: true,
+        joined: new Date().toISOString(),
+        // Optional fields
+        listings: [],
+        bookings: []
+      };
+
+      return {
+        id: item.id,
+        title: item.title,
+        description: item.description,
+        location: location,
+        price: item.price,
+        currency: item.currency || "INR",
+        images: item.images || [],
+        amenities: item.amenities || [],
+        host: host,
+        rating: item.rating || 4.5,
+        bedrooms: item.bedrooms,
+        bathrooms: item.bathrooms,
+        capacity: item.capacity,
+        propertyType: item.property_type,
+        property_type: item.property_type, // For compatibility
+        featured: item.featured || false,
+        reviews: []
+      } as Property;
+    });
 
     return properties;
   } catch (error) {
@@ -107,28 +130,51 @@ export const fetchFeaturedProperties = async (): Promise<Property[]> => {
     }
 
     // Ensure all returned properties have required fields
-    const properties = (data as any[]).map(item => ({
-      id: item.id,
-      title: item.title,
-      description: item.description,
-      location: item.location || {},
-      price: item.price,
-      currency: item.currency || "INR",
-      images: item.images || [],
-      amenities: item.amenities || [],
-      host: {
-        id: item.host_id,
-        name: "Host Name", // This would ideally come from a join query
+    const properties = (data as any[]).map(item => {
+      // Ensure location is properly formatted
+      const locationData = item.location || {};
+      const location = {
+        city: typeof locationData.city === 'string' ? locationData.city : 'Unknown',
+        country: typeof locationData.country === 'string' ? locationData.country : 'Unknown',
+        address: typeof locationData.address === 'string' ? locationData.address : undefined,
+        coordinates: locationData.coordinates && 
+          typeof locationData.coordinates.lat === 'number' && 
+          typeof locationData.coordinates.lng === 'number' ? 
+          locationData.coordinates : undefined
+      };
+
+      // Create a proper host object
+      const host: User = {
+        id: item.host_id || "",
+        name: "Host Name", // Default name
         avatar: "https://ui-avatars.com/api/?name=Host",
-      },
-      rating: item.rating || 4.5,
-      bedrooms: item.bedrooms,
-      bathrooms: item.bathrooms,
-      capacity: item.capacity,
-      propertyType: item.property_type,
-      featured: item.featured || false,
-      reviews: []
-    }));
+        isHost: true,
+        joined: new Date().toISOString(),
+        // Optional fields
+        listings: [],
+        bookings: []
+      };
+
+      return {
+        id: item.id,
+        title: item.title,
+        description: item.description,
+        location: location,
+        price: item.price,
+        currency: item.currency || "INR",
+        images: item.images || [],
+        amenities: item.amenities || [],
+        host: host,
+        rating: item.rating || 4.5,
+        bedrooms: item.bedrooms,
+        bathrooms: item.bathrooms,
+        capacity: item.capacity,
+        propertyType: item.property_type,
+        property_type: item.property_type, // For compatibility
+        featured: item.featured || false,
+        reviews: []
+      } as Property;
+    });
 
     return properties;
   } catch (error) {
@@ -155,26 +201,47 @@ export const fetchPropertyById = async (id: string): Promise<Property | null> =>
       return null;
     }
 
+    // Ensure location is properly formatted
+    const locationData = data.location || {};
+    const location = {
+      city: typeof locationData.city === 'string' ? locationData.city : 'Unknown',
+      country: typeof locationData.country === 'string' ? locationData.country : 'Unknown',
+      address: typeof locationData.address === 'string' ? locationData.address : undefined,
+      coordinates: locationData.coordinates && 
+        typeof locationData.coordinates.lat === 'number' && 
+        typeof locationData.coordinates.lng === 'number' ? 
+        locationData.coordinates : undefined
+    };
+
+    // Create a proper host object
+    const host: User = {
+      id: data.host_id || "",
+      name: "Host Name", // Default name
+      avatar: "https://ui-avatars.com/api/?name=Host",
+      isHost: true,
+      joined: new Date().toISOString(),
+      // Optional fields
+      listings: [],
+      bookings: []
+    };
+
     // Transform the database response to match our app's Property type
     const property: Property = {
       id: data.id,
       title: data.title,
       description: data.description,
-      location: data.location || {},
+      location: location,
       price: data.price,
       currency: data.currency || "INR",
       images: data.images || [],
       amenities: data.amenities || [],
-      host: {
-        id: data.host_id,
-        name: "Host Name", // This would ideally come from a join query
-        avatar: "https://ui-avatars.com/api/?name=Host",
-      },
+      host: host,
       rating: data.rating || 4.5,
       bedrooms: data.bedrooms,
       bathrooms: data.bathrooms,
       capacity: data.capacity,
       propertyType: data.property_type,
+      property_type: data.property_type, // For compatibility
       featured: data.featured || false,
       reviews: [] // Would normally fetch reviews in a separate query or join
     };
