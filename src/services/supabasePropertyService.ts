@@ -32,6 +32,7 @@ const createHostObject = (hostId: string, hostName?: string, hostAvatar?: string
 
 // Converts raw Supabase property to the app's Property type
 const convertToPropertyType = (rawProperty: any): Property => {
+  console.log("Converting raw property:", rawProperty);
   return {
     id: rawProperty.id || '',
     title: rawProperty.title || 'Unnamed Property',
@@ -97,6 +98,8 @@ export async function fetchSupabaseProperties(filters?: SearchFilters): Promise<
       throw error;
     }
     
+    console.log("Raw properties data from Supabase:", data);
+    
     if (!data || data.length === 0) {
       console.log("No properties found in Supabase, falling back to mock data");
       return []; // Allow fallback to mock data
@@ -105,7 +108,7 @@ export async function fetchSupabaseProperties(filters?: SearchFilters): Promise<
     // Convert data to expected format
     const properties: Property[] = data.map(convertToPropertyType);
     
-    console.log(`Successfully fetched ${properties.length} properties from Supabase`);
+    console.log(`Successfully fetched ${properties.length} properties from Supabase:`, properties);
     return properties;
     
   } catch (error) {
@@ -134,8 +137,10 @@ export async function fetchSupabasePropertyById(id: string): Promise<Property | 
       return null; // Allow fallback to mock data
     }
     
+    console.log(`Raw property data from Supabase:`, data);
+    
     const property = convertToPropertyType(data);
-    console.log(`Successfully fetched property ${id} from Supabase`);
+    console.log(`Successfully fetched property ${id} from Supabase:`, property);
     return property;
     
   } catch (error) {

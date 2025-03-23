@@ -1,199 +1,108 @@
 
-import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
-import { Card, CardContent } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { 
-  MapPin, 
-  Star, 
-  Bed, 
-  Bath, 
-  Users, 
-  Heart,
-  ImageIcon
-} from "lucide-react";
-import { cn } from "@/lib/utils";
 import { Property } from "../types";
+import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Star, MapPin, BedDouble, Bath, Users } from "lucide-react";
+import { AspectRatio } from "@/components/ui/aspect-ratio";
 
 interface PropertyCardProps {
   property: Property;
-  featured?: boolean;
 }
 
-const PropertyCard = ({ property, featured = false }: PropertyCardProps) => {
-  const [currentImageIndex, setCurrentImageIndex] = useState(0);
-  const [isImageLoaded, setIsImageLoaded] = useState(false);
-  const [isFavorite, setIsFavorite] = useState(false);
-  const [imageError, setImageError] = useState(false);
+const PropertyCard = ({ property }: PropertyCardProps) => {
+  // Provide fallback values for missing data
+  const {
+    id,
+    title = "Property Title",
+    location = { city: "Unknown", country: "India" },
+    price = 0,
+    currency = "INR",
+    images = [],
+    bedrooms = 0,
+    bathrooms = 0,
+    capacity = 0,
+    rating = 0,
+    amenities = []
+  } = property || {};
 
-  // Reset image state when property changes
-  useEffect(() => {
-    setIsImageLoaded(false);
-    setImageError(false);
-  }, [property.id, currentImageIndex]);
+  // Handle missing values gracefully
+  const city = location?.city || "Unknown City";
+  const country = location?.country || "India";
+  const defaultImageUrl = "/placeholder.svg";
+  const imageUrl = images && images.length > 0 ? images[0] : defaultImageUrl;
 
-  const handlePrevImage = (e: React.MouseEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-    setCurrentImageIndex((prev) => 
-      prev === 0 ? (property.images?.length || 1) - 1 : prev - 1
-    );
-    setImageError(false);
-  };
-
-  const handleNextImage = (e: React.MouseEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-    setCurrentImageIndex((prev) => 
-      prev === (property.images?.length || 1) - 1 ? 0 : prev + 1
-    );
-    setImageError(false);
-  };
-
-  const toggleFavorite = (e: React.MouseEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-    setIsFavorite(!isFavorite);
-  };
-
-  const handleImageError = () => {
-    setImageError(true);
-    setIsImageLoaded(true);
-  };
-
-  // Ensure the property has a valid ID before trying to link to it
-  const propertyLink = property && property.id ? `/properties/${property.id}` : "#";
-
-  // Safely get location data with fallbacks
-  const city = property.location?.city || "Unknown";
-  const country = property.location?.country || "Unknown";
+  if (!property || !id) {
+    console.warn("Property card received invalid property data:", property);
+    return null;
+  }
 
   return (
-    <Link to={propertyLink}>
-      <Card className={cn(
-        "overflow-hidden border-0 shadow-md hover-lift transition-all duration-300 h-full bg-white dark:bg-gray-800",
-        featured ? "border-teal-200 dark:border-teal-900/20" : ""
-      )}>
-        {/* Property Image */}
-        <div className={cn(
-          "relative aspect-[4/3] w-full overflow-hidden rounded-t-lg", 
-          !isImageLoaded && "image-loading"
-        )}>
-          {imageError || !property.images || property.images.length === 0 ? (
-            <div className="h-full w-full image-placeholder flex flex-col items-center justify-center p-4 text-center">
-              <ImageIcon className="h-8 w-8 mb-2 text-teal-400" />
-              <span>Image unavailable</span>
-            </div>
-          ) : (
+    <Link
+      to={`/properties/${id}`}
+      className="block transition-all duration-300 hover:shadow-lg rounded-xl"
+    >
+      <Card className="border-purple-100 dark:border-gray-700 overflow-hidden h-full flex flex-col">
+        <CardHeader className="p-0">
+          <AspectRatio ratio={4/3} className="bg-gray-100">
             <img
-              src={property.images[currentImageIndex]}
-              alt={property.title}
-              className={cn(
-                "object-cover w-full h-full transition-all duration-500", 
-                isImageLoaded ? "opacity-100" : "opacity-0"
-              )}
-              onLoad={() => setIsImageLoaded(true)}
-              onError={handleImageError}
+              src={imageUrl}
+              alt={title}
+              className="object-cover w-full h-full rounded-t-xl"
+              onError={(e) => {
+                console.log("Image error, using fallback");
+                (e.target as HTMLImageElement).src = defaultImageUrl;
+              }}
             />
-          )}
-          
-          {/* Image Navigation */}
-          {!imageError && property.images && property.images.length > 1 && (
-            <div className="absolute inset-0 flex justify-between items-center px-2 opacity-0 hover:opacity-100 transition-opacity">
-              <Button 
-                variant="ghost" 
-                size="icon" 
-                className="h-8 w-8 rounded-full bg-black/40 text-white hover:bg-black/60"
-                onClick={handlePrevImage}
-              >
-                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M15 18l-6-6 6-6" />
-                </svg>
-              </Button>
-              <Button 
-                variant="ghost" 
-                size="icon" 
-                className="h-8 w-8 rounded-full bg-black/40 text-white hover:bg-black/60"
-                onClick={handleNextImage}
-              >
-                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M9 18l6-6-6-6" />
-                </svg>
-              </Button>
-            </div>
-          )}
-          
-          {/* Favorite Button */}
-          <Button
-            variant="ghost"
-            size="icon"
-            className={cn(
-              "absolute top-2 right-2 h-8 w-8 rounded-full transition-colors",
-              isFavorite 
-                ? "bg-white/90 text-teal-500 hover:bg-white/80" 
-                : "bg-black/30 text-white hover:bg-black/40"
-            )}
-            onClick={toggleFavorite}
+          </AspectRatio>
+          <Badge 
+            className="absolute top-3 right-3 bg-purple-600 hover:bg-purple-700"
           >
-            <Heart className={cn("h-4 w-4", isFavorite && "fill-current")} />
-          </Button>
-          
-          {/* Property Type Badge */}
-          <Badge variant="secondary" className="absolute top-2 left-2 bg-teal-100 text-teal-800 dark:bg-teal-900 dark:text-teal-100 border-none">
-            {property.propertyType || "Unknown"}
+            ₹{price.toLocaleString()} / night
           </Badge>
-          
-          {/* Featured Badge */}
-          {property.featured && (
-            <Badge className="absolute bottom-2 left-2 bg-gradient-to-r from-teal-500 to-green-400 text-white border-none">
-              Featured
-            </Badge>
-          )}
-        </div>
+        </CardHeader>
         
-        <CardContent className="p-4">
-          <div className="space-y-3">
-            {/* Property Header */}
-            <div className="flex items-start justify-between">
-              <div>
-                <h3 className="font-semibold text-base line-clamp-1">{property.title || "Unnamed Property"}</h3>
-                <div className="flex items-center text-sm text-muted-foreground mt-0.5">
-                  <MapPin className="h-3 w-3 mr-1 flex-shrink-0 text-teal-500" />
-                  <span className="truncate">{city}, {country}</span>
-                </div>
-              </div>
-              <div className="flex items-center gap-1 bg-teal-50 dark:bg-teal-900/30 py-0.5 px-2 rounded text-sm">
-                <Star className="h-3 w-3 fill-yellow-500 text-yellow-500" />
-                <span className="font-medium">{property.rating ? property.rating.toFixed(1) : "0.0"}</span>
-              </div>
+        <CardContent className="p-4 flex-grow">
+          <div className="flex items-center text-sm text-gray-500 mb-2">
+            <MapPin className="h-4 w-4 text-purple-500 mr-1" />
+            <span>{city}, {country}</span>
+          </div>
+          
+          <h3 className="font-semibold text-lg mb-1 text-purple-800 dark:text-purple-300">
+            {title}
+          </h3>
+          
+          <div className="flex items-center mt-3 space-x-4 text-sm">
+            <div className="flex items-center">
+              <BedDouble className="h-4 w-4 text-purple-500 mr-1" />
+              <span>{bedrooms} {bedrooms === 1 ? 'bed' : 'beds'}</span>
             </div>
             
-            {/* Property Features */}
-            <div className="flex items-center gap-4 text-sm text-muted-foreground">
-              <div className="flex items-center gap-1">
-                <Bed className="h-3.5 w-3.5 text-teal-600 dark:text-teal-400" />
-                <span>{property.bedrooms || 0}</span>
-              </div>
-              <div className="flex items-center gap-1">
-                <Bath className="h-3.5 w-3.5 text-teal-600 dark:text-teal-400" />
-                <span>{property.bathrooms || 0}</span>
-              </div>
-              <div className="flex items-center gap-1">
-                <Users className="h-3.5 w-3.5 text-teal-600 dark:text-teal-400" />
-                <span>Up to {property.capacity || 1}</span>
-              </div>
+            <div className="flex items-center">
+              <Bath className="h-4 w-4 text-purple-500 mr-1" />
+              <span>{bathrooms} {bathrooms === 1 ? 'bath' : 'baths'}</span>
             </div>
             
-            {/* Property Price */}
-            <div className="flex items-end justify-between mt-1 pt-2 border-t border-teal-100 dark:border-gray-700">
-              <div>
-                <span className="text-base font-semibold text-teal-800 dark:text-teal-300">₹{(property.price || 0).toLocaleString('en-IN')}</span>
-                <span className="text-muted-foreground text-sm"> / night</span>
-              </div>
+            <div className="flex items-center">
+              <Users className="h-4 w-4 text-purple-500 mr-1" />
+              <span>{capacity} {capacity === 1 ? 'guest' : 'guests'}</span>
             </div>
           </div>
         </CardContent>
+        
+        <CardFooter className="p-4 pt-0 flex justify-between items-center border-t border-purple-50 dark:border-gray-700">
+          <div className="flex items-center">
+            <Star className="h-4 w-4 text-yellow-500 mr-1 fill-current" />
+            <span className="font-medium">{rating.toFixed(1)}</span>
+          </div>
+          
+          {amenities && amenities.length > 0 && (
+            <div className="text-xs text-gray-500">
+              {amenities.slice(0, 2).join(' • ')}
+              {amenities.length > 2 ? ' • ...' : ''}
+            </div>
+          )}
+        </CardFooter>
       </Card>
     </Link>
   );

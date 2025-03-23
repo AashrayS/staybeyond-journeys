@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useSearchParams } from "react-router-dom";
 import Header from "../components/Header";
@@ -47,7 +46,6 @@ import {
   PaginationPrevious,
 } from "@/components/ui/pagination";
 
-// Items per page for pagination
 const ITEMS_PER_PAGE = 9;
 
 const PropertyListing = () => {
@@ -70,17 +68,19 @@ const PropertyListing = () => {
     bedrooms: undefined,
   });
 
-  // Use React Query to fetch properties
   const { data: properties, isLoading, error } = useQuery({
     queryKey: ['properties', filters],
-    queryFn: () => fetchAllProperties(filters),
+    queryFn: async () => {
+      console.log("Fetching properties with filters:", filters);
+      const result = await fetchAllProperties(filters);
+      console.log("Fetched properties:", result);
+      return result;
+    },
   });
 
   useEffect(() => {
-    // Scroll to top when component mounts
     window.scrollTo(0, 0);
     
-    // Set initial filters from URL params
     if (searchParams.get("checkIn")) {
       setCheckIn(new Date(searchParams.get("checkIn") as string));
     }
@@ -94,9 +94,9 @@ const PropertyListing = () => {
 
   useEffect(() => {
     if (properties) {
+      console.log("Properties before sorting:", properties);
       let sorted = [...properties];
       
-      // Apply sorting
       switch (sortBy) {
         case "price-asc":
           sorted.sort((a, b) => a.price - b.price);
@@ -107,9 +107,9 @@ const PropertyListing = () => {
         case "rating":
           sorted.sort((a, b) => b.rating - a.rating);
           break;
-        // Default is "recommended" - no specific sorting
       }
       
+      console.log("Properties after sorting:", sorted);
       setFilteredProperties(sorted);
     }
   }, [properties, sortBy]);
@@ -119,7 +119,6 @@ const PropertyListing = () => {
       ...prev,
       [key]: value,
     }));
-    // Reset to first page when filters change
     setCurrentPage(1);
   };
 
@@ -135,7 +134,6 @@ const PropertyListing = () => {
         amenities: newAmenities,
       };
     });
-    // Reset to first page when filters change
     setCurrentPage(1);
   };
 
@@ -161,44 +159,55 @@ const PropertyListing = () => {
     setCurrentPage(1);
   };
 
-  // Calculate pagination values
+  const renderPropertyCards = () => {
+    if (!currentProperties || currentProperties.length === 0) {
+      console.log("No properties to display");
+      return null;
+    }
+
+    return currentProperties.map((property, index) => {
+      console.log(`Rendering property ${index}:`, property);
+      return (
+        <div 
+          key={property.id || `prop-${index}`}
+          className="animate-fade-up opacity-0 hover:-translate-y-1 transition-all duration-300"
+          style={{ animationDelay: `${index * 150}ms`, animationFillMode: "forwards" }}
+        >
+          <PropertyCard property={property} />
+        </div>
+      );
+    });
+  };
+
   const totalPages = filteredProperties.length 
     ? Math.ceil(filteredProperties.length / ITEMS_PER_PAGE) 
     : 1;
   
-  // Get current page of properties
   const currentProperties = filteredProperties.slice(
     (currentPage - 1) * ITEMS_PER_PAGE,
     currentPage * ITEMS_PER_PAGE
   );
-  
-  // Function to change page
+
   const handlePageChange = (page: number) => {
     setCurrentPage(page);
-    // Scroll to top
     window.scrollTo({ top: 0, behavior: 'smooth' });
     
-    // Update URL params
     const newParams = new URLSearchParams(searchParams);
     newParams.set("page", page.toString());
     setSearchParams(newParams);
   };
 
-  // Generate page numbers for pagination
   const getPageNumbers = () => {
     const pages = [];
-    const maxPagesToShow = 5; // Show max 5 page numbers
+    const maxPagesToShow = 5;
     
     if (totalPages <= maxPagesToShow) {
-      // Show all pages if total pages <= maxPagesToShow
       for (let i = 1; i <= totalPages; i++) {
         pages.push(i);
       }
     } else {
-      // Always show first page
       pages.push(1);
       
-      // Show ellipsis or pages
       if (currentPage <= 3) {
         pages.push(2, 3, 4);
         pages.push("ellipsis");
@@ -211,7 +220,6 @@ const PropertyListing = () => {
         pages.push("ellipsis");
       }
       
-      // Always show last page
       pages.push(totalPages);
     }
     
@@ -223,10 +231,8 @@ const PropertyListing = () => {
       <Header />
       <main className="flex-grow pt-24 pb-16 px-4">
         <div className="container mx-auto max-w-7xl">
-          {/* Search and Filters Bar */}
           <div className="mb-8 sticky top-20 z-30 bg-white dark:bg-gray-900 rounded-lg shadow-md border border-purple-100 dark:border-gray-700 p-5 backdrop-blur-sm bg-opacity-90 dark:bg-opacity-90 animate-fade-in">
             <div className="flex flex-col md:flex-row gap-4">
-              {/* Location */}
               <div className="flex-1 min-w-[200px]">
                 <label className="text-xs font-medium mb-1 block">Location</label>
                 <div className="relative">
@@ -249,7 +255,6 @@ const PropertyListing = () => {
                 </div>
               </div>
               
-              {/* Check-in */}
               <div className="md:w-40">
                 <label className="text-xs font-medium mb-1 block">Check in</label>
                 <Popover>
@@ -277,7 +282,6 @@ const PropertyListing = () => {
                 </Popover>
               </div>
               
-              {/* Check-out */}
               <div className="md:w-40">
                 <label className="text-xs font-medium mb-1 block">Check out</label>
                 <Popover>
@@ -305,7 +309,6 @@ const PropertyListing = () => {
                 </Popover>
               </div>
               
-              {/* Guests */}
               <div className="md:w-40">
                 <label className="text-xs font-medium mb-1 block">Guests</label>
                 <div className="relative">
@@ -330,7 +333,6 @@ const PropertyListing = () => {
                 </div>
               </div>
               
-              {/* More Filters Button */}
               <div className="flex items-end">
                 <Button 
                   variant="outline" 
@@ -343,10 +345,8 @@ const PropertyListing = () => {
               </div>
             </div>
             
-            {/* Expanded Filters */}
             {showFilters && (
               <div className="mt-6 grid grid-cols-1 md:grid-cols-3 gap-6 animate-fade-up">
-                {/* Price Range */}
                 <div className="space-y-4">
                   <div className="flex items-center justify-between">
                     <h3 className="text-sm font-medium">Price Range (₹)</h3>
@@ -365,7 +365,6 @@ const PropertyListing = () => {
                   />
                 </div>
                 
-                {/* Property Type */}
                 <div className="space-y-4">
                   <h3 className="text-sm font-medium">Property Type</h3>
                   <div className="grid grid-cols-2 gap-2">
@@ -385,7 +384,6 @@ const PropertyListing = () => {
                       </SelectContent>
                     </Select>
                     
-                    {/* Bedrooms */}
                     <Select 
                       value={filters.bedrooms?.toString()} 
                       onValueChange={(value) => 
@@ -406,7 +404,6 @@ const PropertyListing = () => {
                   </div>
                 </div>
                 
-                {/* Amenities */}
                 <div className="space-y-4">
                   <h3 className="text-sm font-medium">Amenities</h3>
                   <div className="grid grid-cols-2 gap-2">
@@ -443,7 +440,6 @@ const PropertyListing = () => {
             )}
           </div>
           
-          {/* Results Count and Sort Options */}
           <div className="mb-6 flex justify-between items-center">
             <h1 className="text-2xl font-bold text-purple-900 dark:text-purple-100">
               {isLoading ? (
@@ -471,7 +467,6 @@ const PropertyListing = () => {
             </Select>
           </div>
           
-          {/* Loading State */}
           {isLoading && (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {[1, 2, 3, 4, 5, 6].map((i) => (
@@ -487,27 +482,16 @@ const PropertyListing = () => {
             </div>
           )}
           
-          {/* Property Grid */}
           {!isLoading && currentProperties.length > 0 && (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 animate-fade-in">
-              {currentProperties.map((property, index) => (
-                <div 
-                  key={property.id}
-                  className="animate-fade-up opacity-0 hover:-translate-y-1 transition-all duration-300"
-                  style={{ animationDelay: `${index * 150}ms`, animationFillMode: "forwards" }}
-                >
-                  <PropertyCard property={property} />
-                </div>
-              ))}
+              {renderPropertyCards()}
             </div>
           )}
           
-          {/* Pagination */}
           {!isLoading && filteredProperties.length > ITEMS_PER_PAGE && (
             <div className="mt-12">
               <Pagination>
                 <PaginationContent>
-                  {/* Previous page button */}
                   {currentPage > 1 && (
                     <PaginationItem>
                       <PaginationPrevious 
@@ -517,7 +501,6 @@ const PropertyListing = () => {
                     </PaginationItem>
                   )}
                   
-                  {/* Page numbers */}
                   {getPageNumbers().map((page, index) => (
                     <PaginationItem key={index}>
                       {page === "ellipsis" ? (
@@ -534,7 +517,6 @@ const PropertyListing = () => {
                     </PaginationItem>
                   ))}
                   
-                  {/* Next page button */}
                   {currentPage < totalPages && (
                     <PaginationItem>
                       <PaginationNext 
@@ -548,7 +530,6 @@ const PropertyListing = () => {
             </div>
           )}
           
-          {/* Error State */}
           {error && !isLoading && (
             <div className="text-center py-16 animate-fade-in">
               <div className="mb-4 text-red-500">
@@ -585,7 +566,6 @@ const PropertyListing = () => {
             </div>
           )}
           
-          {/* No Results */}
           {!isLoading && filteredProperties.length === 0 && !error && (
             <div className="text-center py-16 animate-fade-in">
               <div className="mb-4 text-purple-400">
