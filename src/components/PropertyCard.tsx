@@ -62,8 +62,11 @@ const PropertyCard = ({ property, featured = false }: PropertyCardProps) => {
     setIsImageLoaded(true);
   };
 
+  // Ensure the property has a valid ID before trying to link to it
+  const propertyLink = property && property.id ? `/properties/${property.id}` : "#";
+
   return (
-    <Link to={`/properties/${property.id}`}>
+    <Link to={propertyLink}>
       <Card className={cn(
         "overflow-hidden border-0 shadow-md hover-lift transition-all duration-300 h-full bg-white dark:bg-gray-800",
         featured ? "border-teal-200 dark:border-teal-900/20" : ""

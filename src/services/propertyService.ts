@@ -23,7 +23,7 @@ export const fetchProperties = async (): Promise<Property[]> => {
   }
 };
 
-// Renamed function to match what's imported in PropertyListing.tsx
+// Function to fetch all properties with filters
 export const fetchAllProperties = async (filters?: SearchFilters): Promise<Property[]> => {
   try {
     let query = supabase
@@ -62,7 +62,31 @@ export const fetchAllProperties = async (filters?: SearchFilters): Promise<Prope
       return [];
     }
 
-    return data as unknown as Property[];
+    // Ensure all returned properties have required fields
+    const properties = (data as any[]).map(item => ({
+      id: item.id,
+      title: item.title,
+      description: item.description,
+      location: item.location,
+      price: item.price,
+      currency: item.currency || "INR",
+      images: item.images || [],
+      amenities: item.amenities || [],
+      host: {
+        id: item.host_id,
+        name: "Host Name", // This would ideally come from a join query
+        avatar: "https://ui-avatars.com/api/?name=Host",
+      },
+      rating: item.rating || 4.5,
+      bedrooms: item.bedrooms,
+      bathrooms: item.bathrooms,
+      capacity: item.capacity,
+      propertyType: item.property_type,
+      featured: item.featured || false,
+      reviews: []
+    }));
+
+    return properties;
   } catch (error) {
     console.error("Error fetching properties:", error);
     return [];
@@ -82,7 +106,31 @@ export const fetchFeaturedProperties = async (): Promise<Property[]> => {
       return [];
     }
 
-    return data as unknown as Property[];
+    // Ensure all returned properties have required fields
+    const properties = (data as any[]).map(item => ({
+      id: item.id,
+      title: item.title,
+      description: item.description,
+      location: item.location || {},
+      price: item.price,
+      currency: item.currency || "INR",
+      images: item.images || [],
+      amenities: item.amenities || [],
+      host: {
+        id: item.host_id,
+        name: "Host Name", // This would ideally come from a join query
+        avatar: "https://ui-avatars.com/api/?name=Host",
+      },
+      rating: item.rating || 4.5,
+      bedrooms: item.bedrooms,
+      bathrooms: item.bathrooms,
+      capacity: item.capacity,
+      propertyType: item.property_type,
+      featured: item.featured || false,
+      reviews: []
+    }));
+
+    return properties;
   } catch (error) {
     console.error("Error fetching featured properties:", error);
     return [];
@@ -103,7 +151,35 @@ export const fetchPropertyById = async (id: string): Promise<Property | null> =>
       return null;
     }
 
-    return data as unknown as Property;
+    if (!data) {
+      return null;
+    }
+
+    // Transform the database response to match our app's Property type
+    const property: Property = {
+      id: data.id,
+      title: data.title,
+      description: data.description,
+      location: data.location || {},
+      price: data.price,
+      currency: data.currency || "INR",
+      images: data.images || [],
+      amenities: data.amenities || [],
+      host: {
+        id: data.host_id,
+        name: "Host Name", // This would ideally come from a join query
+        avatar: "https://ui-avatars.com/api/?name=Host",
+      },
+      rating: data.rating || 4.5,
+      bedrooms: data.bedrooms,
+      bathrooms: data.bathrooms,
+      capacity: data.capacity,
+      propertyType: data.property_type,
+      featured: data.featured || false,
+      reviews: [] // Would normally fetch reviews in a separate query or join
+    };
+
+    return property;
   } catch (error) {
     console.error(`Error fetching property with ID ${id}:`, error);
     return null;
