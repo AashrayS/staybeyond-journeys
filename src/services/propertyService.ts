@@ -2,7 +2,7 @@
 // src/services/propertyService.ts
 
 import { supabase } from "@/integrations/supabase/client";
-import { Property, Booking, Transportation } from "@/types";
+import { Property, Booking, Transportation, SearchFilters } from "@/types";
 
 // Function to fetch all properties
 export const fetchProperties = async (): Promise<Property[]> => {
@@ -10,6 +10,52 @@ export const fetchProperties = async (): Promise<Property[]> => {
     const { data, error } = await supabase
       .from("properties")
       .select("*");
+
+    if (error) {
+      console.error("Error fetching properties:", error);
+      return [];
+    }
+
+    return data as unknown as Property[];
+  } catch (error) {
+    console.error("Error fetching properties:", error);
+    return [];
+  }
+};
+
+// Renamed function to match what's imported in PropertyListing.tsx
+export const fetchAllProperties = async (filters?: SearchFilters): Promise<Property[]> => {
+  try {
+    let query = supabase
+      .from("properties")
+      .select("*");
+
+    // Apply filters if provided
+    if (filters) {
+      if (filters.location) {
+        query = query.ilike('location->city', `%${filters.location}%`);
+      }
+      
+      if (filters.priceRange) {
+        query = query.gte('price', filters.priceRange.min)
+                     .lte('price', filters.priceRange.max);
+      }
+      
+      if (filters.propertyType) {
+        query = query.eq('property_type', filters.propertyType);
+      }
+      
+      if (filters.bedrooms) {
+        query = query.eq('bedrooms', filters.bedrooms);
+      }
+      
+      if (filters.amenities && filters.amenities.length > 0) {
+        // This is a simplification - actual implementation would need to handle array contains
+        query = query.contains('amenities', filters.amenities);
+      }
+    }
+
+    const { data, error } = await query;
 
     if (error) {
       console.error("Error fetching properties:", error);
@@ -229,6 +275,9 @@ export const createBooking = async (bookingData: Omit<Booking, 'id'>): Promise<B
     const startDate = bookingData.startDate ?? new Date().toISOString();
     const endDate = bookingData.endDate ?? new Date().toISOString();
     
+    // Current timestamp for created_at
+    const currentTimestamp = new Date().toISOString();
+    
     const { data, error } = await supabase
       .from("bookings")
       .insert([
@@ -240,6 +289,7 @@ export const createBooking = async (bookingData: Omit<Booking, 'id'>): Promise<B
           total_price: bookingData.totalPrice,
           status: bookingData.status,
           guests: bookingData.guests,
+          created_at: currentTimestamp
         }
       ])
       .select("*")
@@ -254,15 +304,15 @@ export const createBooking = async (bookingData: Omit<Booking, 'id'>): Promise<B
     const booking: Booking = {
       id: data.id,
       propertyId: data.property_id,
-      property: {} as Property,  // This would need to be populated separately
+      property: bookingData.property || {} as Property,
       userId: data.user_id,
-      user: {} as any,  // This would need to be populated separately
+      user: bookingData.user || {} as any,
       startDate: data.start_date,
       endDate: data.end_date,
       totalPrice: data.total_price,
       status: data.status as "pending" | "confirmed" | "completed" | "cancelled",
       guests: data.guests,
-      createdAt: data.created_at
+      createdAt: data.created_at || currentTimestamp
     };
 
     return booking;
@@ -302,9 +352,9 @@ export const updateBooking = async (id: string, updates: Partial<Booking>): Prom
     const booking: Booking = {
       id: data.id,
       propertyId: data.property_id,
-      property: {} as Property,  // This would need to be populated separately
+      property: updates.property || {} as Property,
       userId: data.user_id,
-      user: {} as any,  // This would need to be populated separately
+      user: updates.user || {} as any,
       startDate: data.start_date,
       endDate: data.end_date,
       totalPrice: data.total_price,
@@ -514,4 +564,3 @@ export const deleteTransportation = async (id: string): Promise<boolean> => {
     return false;
   }
 };
-
