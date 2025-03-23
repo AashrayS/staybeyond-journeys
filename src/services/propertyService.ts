@@ -1,8 +1,8 @@
-
 // src/services/propertyService.ts
 
 import { supabase } from "@/integrations/supabase/client";
 import { Property, Booking, Transportation, SearchFilters, User } from "@/types";
+import { Json } from "@/integrations/supabase/types";
 
 // Function to fetch all properties
 export const fetchProperties = async (): Promise<Property[]> => {
@@ -21,6 +21,53 @@ export const fetchProperties = async (): Promise<Property[]> => {
     console.error("Error fetching properties:", error);
     return [];
   }
+};
+
+// Helper function to safely process location data
+const processLocationData = (locationData: Json | null): Property['location'] => {
+  // Default location object if data is invalid
+  const defaultLocation: Property['location'] = {
+    city: 'Unknown',
+    country: 'Unknown'
+  };
+  
+  // If locationData is null or undefined, return default
+  if (!locationData) return defaultLocation;
+  
+  // If locationData is an object, extract properties safely
+  if (typeof locationData === 'object' && locationData !== null && !Array.isArray(locationData)) {
+    return {
+      city: typeof locationData.city === 'string' ? locationData.city : 'Unknown',
+      country: typeof locationData.country === 'string' ? locationData.country : 'Unknown',
+      address: typeof locationData.address === 'string' ? locationData.address : undefined,
+      coordinates: locationData.coordinates && 
+        typeof locationData.coordinates === 'object' && 
+        !Array.isArray(locationData.coordinates) &&
+        typeof locationData.coordinates.lat === 'number' && 
+        typeof locationData.coordinates.lng === 'number' ? 
+        {
+          lat: locationData.coordinates.lat,
+          lng: locationData.coordinates.lng
+        } : undefined
+    };
+  }
+  
+  // If we get here, locationData is not in the expected format
+  return defaultLocation;
+};
+
+// Helper function to create a complete user object
+const createHostObject = (hostId: string | null): User => {
+  return {
+    id: hostId || "",
+    name: "Host Name", // Default name
+    avatar: "https://ui-avatars.com/api/?name=Host",
+    isHost: true,
+    joined: new Date().toISOString(),
+    // Optional fields
+    listings: [],
+    bookings: []
+  };
 };
 
 // Function to fetch all properties with filters
@@ -64,47 +111,29 @@ export const fetchAllProperties = async (filters?: SearchFilters): Promise<Prope
 
     // Ensure all returned properties have required fields
     const properties = (data as any[]).map(item => {
-      // Ensure location is properly formatted
-      const locationData = item.location || {};
-      const location = {
-        city: typeof locationData.city === 'string' ? locationData.city : 'Unknown',
-        country: typeof locationData.country === 'string' ? locationData.country : 'Unknown',
-        address: typeof locationData.address === 'string' ? locationData.address : undefined,
-        coordinates: locationData.coordinates && 
-          typeof locationData.coordinates.lat === 'number' && 
-          typeof locationData.coordinates.lng === 'number' ? 
-          locationData.coordinates : undefined
-      };
-
+      // Process location data safely
+      const location = processLocationData(item.location);
+      
       // Create a proper host object
-      const host: User = {
-        id: item.host_id || "",
-        name: "Host Name", // Default name
-        avatar: "https://ui-avatars.com/api/?name=Host",
-        isHost: true,
-        joined: new Date().toISOString(),
-        // Optional fields
-        listings: [],
-        bookings: []
-      };
+      const host = createHostObject(item.host_id);
 
       return {
         id: item.id,
-        title: item.title,
-        description: item.description,
+        title: item.title || "Unnamed Property",
+        description: item.description || "",
         location: location,
-        price: item.price,
+        price: typeof item.price === 'number' ? item.price : 0,
         currency: item.currency || "INR",
-        images: item.images || [],
-        amenities: item.amenities || [],
+        images: Array.isArray(item.images) ? item.images : [],
+        amenities: Array.isArray(item.amenities) ? item.amenities : [],
         host: host,
-        rating: item.rating || 4.5,
-        bedrooms: item.bedrooms,
-        bathrooms: item.bathrooms,
-        capacity: item.capacity,
-        propertyType: item.property_type,
-        property_type: item.property_type, // For compatibility
-        featured: item.featured || false,
+        rating: typeof item.rating === 'number' ? item.rating : 4.5,
+        bedrooms: typeof item.bedrooms === 'number' ? item.bedrooms : 1,
+        bathrooms: typeof item.bathrooms === 'number' ? item.bathrooms : 1,
+        capacity: typeof item.capacity === 'number' ? item.capacity : 1,
+        propertyType: item.property_type || "Unknown",
+        property_type: item.property_type || "Unknown", // For compatibility
+        featured: Boolean(item.featured),
         reviews: []
       } as Property;
     });
@@ -131,47 +160,29 @@ export const fetchFeaturedProperties = async (): Promise<Property[]> => {
 
     // Ensure all returned properties have required fields
     const properties = (data as any[]).map(item => {
-      // Ensure location is properly formatted
-      const locationData = item.location || {};
-      const location = {
-        city: typeof locationData.city === 'string' ? locationData.city : 'Unknown',
-        country: typeof locationData.country === 'string' ? locationData.country : 'Unknown',
-        address: typeof locationData.address === 'string' ? locationData.address : undefined,
-        coordinates: locationData.coordinates && 
-          typeof locationData.coordinates.lat === 'number' && 
-          typeof locationData.coordinates.lng === 'number' ? 
-          locationData.coordinates : undefined
-      };
-
+      // Process location data safely
+      const location = processLocationData(item.location);
+      
       // Create a proper host object
-      const host: User = {
-        id: item.host_id || "",
-        name: "Host Name", // Default name
-        avatar: "https://ui-avatars.com/api/?name=Host",
-        isHost: true,
-        joined: new Date().toISOString(),
-        // Optional fields
-        listings: [],
-        bookings: []
-      };
+      const host = createHostObject(item.host_id);
 
       return {
         id: item.id,
-        title: item.title,
-        description: item.description,
+        title: item.title || "Unnamed Property",
+        description: item.description || "",
         location: location,
-        price: item.price,
+        price: typeof item.price === 'number' ? item.price : 0,
         currency: item.currency || "INR",
-        images: item.images || [],
-        amenities: item.amenities || [],
+        images: Array.isArray(item.images) ? item.images : [],
+        amenities: Array.isArray(item.amenities) ? item.amenities : [],
         host: host,
-        rating: item.rating || 4.5,
-        bedrooms: item.bedrooms,
-        bathrooms: item.bathrooms,
-        capacity: item.capacity,
-        propertyType: item.property_type,
-        property_type: item.property_type, // For compatibility
-        featured: item.featured || false,
+        rating: typeof item.rating === 'number' ? item.rating : 4.5,
+        bedrooms: typeof item.bedrooms === 'number' ? item.bedrooms : 1,
+        bathrooms: typeof item.bathrooms === 'number' ? item.bathrooms : 1,
+        capacity: typeof item.capacity === 'number' ? item.capacity : 1,
+        propertyType: item.property_type || "Unknown",
+        property_type: item.property_type || "Unknown", // For compatibility
+        featured: Boolean(item.featured),
         reviews: []
       } as Property;
     });
@@ -201,48 +212,30 @@ export const fetchPropertyById = async (id: string): Promise<Property | null> =>
       return null;
     }
 
-    // Ensure location is properly formatted
-    const locationData = data.location || {};
-    const location = {
-      city: typeof locationData.city === 'string' ? locationData.city : 'Unknown',
-      country: typeof locationData.country === 'string' ? locationData.country : 'Unknown',
-      address: typeof locationData.address === 'string' ? locationData.address : undefined,
-      coordinates: locationData.coordinates && 
-        typeof locationData.coordinates.lat === 'number' && 
-        typeof locationData.coordinates.lng === 'number' ? 
-        locationData.coordinates : undefined
-    };
-
+    // Process location data safely
+    const location = processLocationData(data.location);
+    
     // Create a proper host object
-    const host: User = {
-      id: data.host_id || "",
-      name: "Host Name", // Default name
-      avatar: "https://ui-avatars.com/api/?name=Host",
-      isHost: true,
-      joined: new Date().toISOString(),
-      // Optional fields
-      listings: [],
-      bookings: []
-    };
+    const host = createHostObject(data.host_id);
 
     // Transform the database response to match our app's Property type
     const property: Property = {
       id: data.id,
-      title: data.title,
-      description: data.description,
+      title: data.title || "Unnamed Property",
+      description: data.description || "",
       location: location,
-      price: data.price,
+      price: typeof data.price === 'number' ? data.price : 0,
       currency: data.currency || "INR",
-      images: data.images || [],
-      amenities: data.amenities || [],
+      images: Array.isArray(data.images) ? data.images : [],
+      amenities: Array.isArray(data.amenities) ? data.amenities : [],
       host: host,
-      rating: data.rating || 4.5,
-      bedrooms: data.bedrooms,
-      bathrooms: data.bathrooms,
-      capacity: data.capacity,
-      propertyType: data.property_type,
-      property_type: data.property_type, // For compatibility
-      featured: data.featured || false,
+      rating: typeof data.rating === 'number' ? data.rating : 4.5,
+      bedrooms: typeof data.bedrooms === 'number' ? data.bedrooms : 1,
+      bathrooms: typeof data.bathrooms === 'number' ? data.bathrooms : 1,
+      capacity: typeof data.capacity === 'number' ? data.capacity : 1,
+      propertyType: data.property_type || "Unknown",
+      property_type: data.property_type || "Unknown", // For compatibility
+      featured: Boolean(data.featured),
       reviews: [] // Would normally fetch reviews in a separate query or join
     };
 
