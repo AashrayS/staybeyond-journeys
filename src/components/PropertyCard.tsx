@@ -37,7 +37,7 @@ const PropertyCard = ({ property, featured = false }: PropertyCardProps) => {
     e.preventDefault();
     e.stopPropagation();
     setCurrentImageIndex((prev) => 
-      prev === 0 ? property.images.length - 1 : prev - 1
+      prev === 0 ? (property.images?.length || 1) - 1 : prev - 1
     );
     setImageError(false);
   };
@@ -46,7 +46,7 @@ const PropertyCard = ({ property, featured = false }: PropertyCardProps) => {
     e.preventDefault();
     e.stopPropagation();
     setCurrentImageIndex((prev) => 
-      prev === property.images.length - 1 ? 0 : prev + 1
+      prev === (property.images?.length || 1) - 1 ? 0 : prev + 1
     );
     setImageError(false);
   };

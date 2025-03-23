@@ -2,6 +2,7 @@
 import { motion } from "framer-motion";
 import { Card, CardContent } from "@/components/ui/card";
 import { AspectRatio } from "@/components/ui/aspect-ratio";
+import { useNavigate } from "react-router-dom";
 
 const destinations = [
   {
@@ -31,6 +32,12 @@ const destinations = [
 ];
 
 const PopularDestinations = () => {
+  const navigate = useNavigate();
+  
+  const handleDestinationClick = (destination: string) => {
+    navigate(`/properties?location=${destination}`);
+  };
+
   return (
     <section className="py-16 px-4 md:px-8">
       <div className="container mx-auto">
@@ -50,6 +57,7 @@ const PopularDestinations = () => {
               transition={{ duration: 0.5, delay: index * 0.1 }}
               whileHover={{ y: -5 }}
               viewport={{ once: true }}
+              onClick={() => handleDestinationClick(destination.name)}
             >
               <Card className="overflow-hidden hover:shadow-lg transition-all cursor-pointer">
                 <AspectRatio ratio={4/3}>
