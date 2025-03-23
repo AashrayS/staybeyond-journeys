@@ -1,5 +1,5 @@
-import { locations, properties as mockProperties } from "../data/mockData";
-import { Property, SearchFilters } from "../types";
+import { locations, properties as mockProperties, bookings as mockBookings } from "../data/mockData";
+import { Property, SearchFilters, Booking, Transportation } from "../types";
 import { fetchSupabaseProperties, fetchSupabasePropertyById } from "./supabasePropertyService";
 
 // Helper to ensure we're working with valid properties that match our expected types
@@ -174,4 +174,58 @@ export const fetchAllLocations = async (): Promise<string[]> => {
   // For simplicity, we'll use the mock locations for now
   // This could be enhanced to fetch from Supabase in the future
   return locations;
+};
+
+// Create a new booking
+export const createBooking = async (bookingData: Omit<Booking, 'id'>): Promise<Booking | null> => {
+  try {
+    console.log("Creating booking with data:", bookingData);
+    
+    // For now, we'll create a mock booking with an ID
+    // In a real app, this would be inserted into Supabase
+    const newBooking: Booking = {
+      ...bookingData,
+      id: `booking-${Math.random().toString(36).substr(2, 9)}`,
+      // Ensure we use the right property names for both frontend and backend
+      property_id: bookingData.propertyId,
+      user_id: bookingData.userId,
+      start_date: bookingData.startDate,
+      end_date: bookingData.endDate,
+      created_at: bookingData.createdAt || new Date().toISOString()
+    };
+    
+    // Add to mock bookings (this would be a Supabase insert in production)
+    mockBookings.push(newBooking);
+    
+    console.log("Created booking:", newBooking);
+    return newBooking;
+  } catch (error) {
+    console.error("Error creating booking:", error);
+    return null;
+  }
+};
+
+// Create a new transportation booking
+export const createTransportation = async (transportData: Omit<Transportation, 'id'>): Promise<Transportation | null> => {
+  try {
+    console.log("Creating transportation with data:", transportData);
+    
+    // For now, we'll create a mock transportation with an ID
+    // In a real app, this would be inserted into Supabase
+    const newTransportation: Transportation = {
+      ...transportData,
+      id: `transport-${Math.random().toString(36).substr(2, 9)}`,
+      // Ensure we use the right property names for both frontend and backend
+      booking_id: transportData.bookingId,
+      pickup_location: transportData.pickupLocation,
+      dropoff_location: transportData.dropoffLocation,
+      pickup_time: transportData.pickupTime
+    };
+    
+    console.log("Created transportation:", newTransportation);
+    return newTransportation;
+  } catch (error) {
+    console.error("Error creating transportation:", error);
+    return null;
+  }
 };
