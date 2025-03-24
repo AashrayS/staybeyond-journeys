@@ -1,3 +1,4 @@
+
 import { locations, properties as mockProperties, bookings as mockBookings } from "../data/mockData";
 import { Property, SearchFilters, Booking, Transportation } from "../types";
 import { fetchSupabaseProperties, fetchSupabasePropertyById } from "./supabasePropertyService";
@@ -112,19 +113,37 @@ export const fetchAllProperties = async (filters?: SearchFilters): Promise<Prope
 // Fetch featured properties
 export const fetchFeaturedProperties = async (): Promise<Property[]> => {
   try {
-    // First try to get properties from Supabase
+    console.log("Fetching featured properties from Supabase");
+    
+    // First try to get all properties from Supabase
     const supabaseProperties = await fetchSupabaseProperties();
     
     // If we got properties from Supabase, filter for featured ones
     if (supabaseProperties && supabaseProperties.length > 0) {
-      const featuredProperties = supabaseProperties.filter(p => p.featured).slice(0, 6);
+      console.log(`Received ${supabaseProperties.length} properties from Supabase, checking for featured ones`);
+      
+      // Debug each property's featured status
+      supabaseProperties.forEach(p => {
+        console.log(`Property ${p.id} (${p.title}) featured status: ${p.featured}`);
+      });
+      
+      // Filter properties where featured is true
+      const featuredProperties = supabaseProperties.filter(p => p.featured === true).slice(0, 6);
+      console.log(`Found ${featuredProperties.length} featured properties in Supabase data`);
+      
       if (featuredProperties.length > 0) {
         return featuredProperties.map(validateProperty);
       }
+      
+      // If no featured properties in Supabase, fall back to mock data
+      console.log("No featured properties found in Supabase, falling back to mock data");
+    } else {
+      console.log("No properties received from Supabase, falling back to mock data");
     }
     
-    // Otherwise fall back to mock data
+    // Fall back to mock data
     const featuredProperties = mockProperties.filter(p => p.featured).slice(0, 6);
+    console.log(`Using ${featuredProperties.length} mock featured properties`);
     return featuredProperties.map(validateProperty);
     
   } catch (error) {
@@ -181,24 +200,59 @@ export const createBooking = async (bookingData: Omit<Booking, 'id'>): Promise<B
   try {
     console.log("Creating booking with data:", bookingData);
     
-    // For now, we'll create a mock booking with an ID
-    // In a real app, this would be inserted into Supabase
-    const newBooking: Booking = {
-      ...bookingData,
-      id: `booking-${Math.random().toString(36).substr(2, 9)}`,
-      // Ensure we use the right property names for both frontend and backend
-      property_id: bookingData.propertyId,
-      user_id: bookingData.userId,
-      start_date: bookingData.startDate,
-      end_date: bookingData.endDate,
-      created_at: bookingData.createdAt || new Date().toISOString()
+    // Store the booking in Supabase
+    const { data: bookingInsertData, error: bookingError } = await supabase
+      .from('bookings')
+      .insert({
+        property_id: bookingData.propertyId,
+        user_id: bookingData.userId,
+        start_date: bookingData.startDate,
+        end_date: bookingData.endDate,
+        total_price: bookingData.totalPrice,
+        status: bookingData.status,
+        guests: bookingData.guests
+      })
+      .select('*')
+      .single();
+    
+    if (bookingError) {
+      console.error("Error saving booking to Supabase:", bookingError);
+      // Fall back to mock booking creation if Supabase fails
+      const newBooking: Booking = {
+        ...bookingData,
+        id: `booking-${Math.random().toString(36).substr(2, 9)}`,
+        property_id: bookingData.propertyId,
+        user_id: bookingData.userId,
+        start_date: bookingData.startDate,
+        end_date: bookingData.endDate,
+        created_at: bookingData.createdAt || new Date().toISOString()
+      };
+      
+      // Add to mock bookings (this would be a Supabase insert in production)
+      mockBookings.push(newBooking);
+      
+      console.log("Created mock booking:", newBooking);
+      return newBooking;
+    }
+    
+    console.log("Booking successfully saved to Supabase:", bookingInsertData);
+    
+    // Convert the Supabase booking to our application Booking type
+    const savedBooking: Booking = {
+      id: bookingInsertData.id,
+      propertyId: bookingInsertData.property_id,
+      property: bookingData.property,
+      userId: bookingInsertData.user_id,
+      user: bookingData.user,
+      startDate: bookingInsertData.start_date,
+      endDate: bookingInsertData.end_date,
+      totalPrice: bookingInsertData.total_price,
+      status: bookingInsertData.status,
+      guests: bookingInsertData.guests,
+      createdAt: bookingInsertData.created_at
     };
     
-    // Add to mock bookings (this would be a Supabase insert in production)
-    mockBookings.push(newBooking);
-    
-    console.log("Created booking:", newBooking);
-    return newBooking;
+    return savedBooking;
   } catch (error) {
     console.error("Error creating booking:", error);
     return null;
@@ -210,22 +264,57 @@ export const createTransportation = async (transportData: Omit<Transportation, '
   try {
     console.log("Creating transportation with data:", transportData);
     
-    // For now, we'll create a mock transportation with an ID
-    // In a real app, this would be inserted into Supabase
-    const newTransportation: Transportation = {
-      ...transportData,
-      id: `transport-${Math.random().toString(36).substr(2, 9)}`,
-      // Ensure we use the right property names for both frontend and backend
-      booking_id: transportData.bookingId,
-      pickup_location: transportData.pickupLocation,
-      dropoff_location: transportData.dropoffLocation,
-      pickup_time: transportData.pickupTime
+    // Store the transportation in Supabase
+    const { data: transportInsertData, error: transportError } = await supabase
+      .from('transportation')
+      .insert({
+        booking_id: transportData.bookingId,
+        type: transportData.type,
+        pickup_location: transportData.pickupLocation,
+        dropoff_location: transportData.dropoffLocation,
+        pickup_time: transportData.pickupTime,
+        estimated_price: transportData.estimatedPrice,
+        status: transportData.status
+      })
+      .select('*')
+      .single();
+    
+    if (transportError) {
+      console.error("Error saving transportation to Supabase:", transportError);
+      // Fall back to mock transportation creation
+      const newTransportation: Transportation = {
+        ...transportData,
+        id: `transport-${Math.random().toString(36).substr(2, 9)}`,
+        booking_id: transportData.bookingId,
+        pickup_location: transportData.pickupLocation,
+        dropoff_location: transportData.dropoffLocation,
+        pickup_time: transportData.pickupTime
+      };
+      
+      console.log("Created mock transportation:", newTransportation);
+      return newTransportation;
+    }
+    
+    console.log("Transportation successfully saved to Supabase:", transportInsertData);
+    
+    // Convert the Supabase transportation to our application Transportation type
+    const savedTransportation: Transportation = {
+      id: transportInsertData.id,
+      bookingId: transportInsertData.booking_id,
+      type: transportInsertData.type,
+      pickupLocation: transportInsertData.pickup_location,
+      dropoffLocation: transportInsertData.dropoff_location,
+      pickupTime: transportInsertData.pickup_time,
+      estimatedPrice: transportInsertData.estimated_price,
+      status: transportInsertData.status
     };
     
-    console.log("Created transportation:", newTransportation);
-    return newTransportation;
+    return savedTransportation;
   } catch (error) {
     console.error("Error creating transportation:", error);
     return null;
   }
 };
+
+// Import supabase at the top of the file
+import { supabase } from "@/integrations/supabase/client";

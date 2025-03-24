@@ -38,7 +38,7 @@ const convertToPropertyType = (rawProperty: any): Property => {
   if (!rawProperty) {
     console.error("Received null or undefined property");
     return {
-      id: "error-" + Math.random().toString(),
+      id: "error-" + Math.random().toString(36).substr(2, 9),
       title: "Error Loading Property",
       description: "",
       location: { city: "Unknown", country: "India" },
@@ -56,6 +56,9 @@ const convertToPropertyType = (rawProperty: any): Property => {
       reviews: []
     };
   }
+  
+  // Log featured status to identify any issues
+  console.log(`Property ${rawProperty.id}: featured status = ${rawProperty.featured}`);
   
   return {
     id: rawProperty.id || '',
@@ -76,7 +79,7 @@ const convertToPropertyType = (rawProperty: any): Property => {
     bathrooms: typeof rawProperty.bathrooms === 'number' ? rawProperty.bathrooms : 1,
     capacity: typeof rawProperty.capacity === 'number' ? rawProperty.capacity : 2,
     propertyType: rawProperty.property_type || 'Apartment',
-    featured: Boolean(rawProperty.featured),
+    featured: rawProperty.featured === true, // Ensure boolean value for featured flag
     reviews: []
   };
 };
@@ -90,8 +93,8 @@ export async function fetchSupabaseProperties(filters?: SearchFilters): Promise<
     // Apply filters if provided
     if (filters) {
       if (filters.location && typeof filters.location === 'string' && filters.location.trim() !== '') {
-        // Use JSON operator to search in the location object
-        query = query.textSearch('location', filters.location);
+        // Check if location exists in the city field of the location JSONB object
+        query = query.or(`location->city.ilike.%${filters.location}%,location->country.ilike.%${filters.location}%`);
       }
       
       if (filters.guests && typeof filters.guests === 'number' && filters.guests > 0) {
@@ -124,6 +127,7 @@ export async function fetchSupabaseProperties(filters?: SearchFilters): Promise<
     }
     
     console.log("Raw properties data from Supabase:", data);
+    console.log(`Fetched ${data?.length || 0} properties from Supabase`);
     
     if (!data || data.length === 0) {
       console.log("No properties found in Supabase, falling back to mock data");
@@ -133,7 +137,7 @@ export async function fetchSupabaseProperties(filters?: SearchFilters): Promise<
     // Convert data to expected format
     const properties: Property[] = data.map(convertToPropertyType);
     
-    console.log(`Successfully fetched ${properties.length} properties from Supabase:`, properties);
+    console.log(`Successfully converted ${properties.length} properties from Supabase:`, properties);
     return properties;
     
   } catch (error) {
