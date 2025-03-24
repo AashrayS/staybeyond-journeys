@@ -43,6 +43,7 @@ const convertToPropertyType = (rawProperty: any): Property => {
       description: "",
       location: { city: "Unknown", country: "India" },
       price: 0,
+      currency: "INR", // Add the missing currency property
       images: [],
       amenities: [],
       host: createHostObject("unknown"),
