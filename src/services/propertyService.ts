@@ -40,6 +40,7 @@ const filterProperties = (properties: Property[], filters?: SearchFilters): Prop
     if (filters.location && property.location && 
         typeof property.location === 'object' && 
         'city' in property.location && 
+        typeof property.location.city === 'string' &&
         !property.location.city.toLowerCase().includes(filters.location.toLowerCase())) {
       return false;
     }
@@ -168,12 +169,12 @@ export const fetchAllLocations = async (): Promise<string[]> => {
       data
         .map(item => {
           const loc = item.location;
-          if (typeof loc === 'object' && loc !== null && 'city' in loc) {
+          if (typeof loc === 'object' && loc !== null && 'city' in loc && typeof loc.city === 'string') {
             return loc.city;
           }
           return null;
         })
-        .filter(city => city && typeof city === 'string')
+        .filter(city => city !== null)
     )];
     
     return uniqueCities.length > 0 ? uniqueCities as string[] : locations;
@@ -400,4 +401,3 @@ export const fetchPaginatedProperties = async (
     };
   }
 };
-

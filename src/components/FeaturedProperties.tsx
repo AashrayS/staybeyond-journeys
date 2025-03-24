@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -22,18 +21,16 @@ const FeaturedProperties = () => {
     staleTime: 5 * 60 * 1000, // 5 minutes
     refetchOnWindowFocus: false,
     retry: 2, // Retry twice before giving up
-    meta: {
-      onSuccess: (data) => {
-        console.log("Successfully fetched featured properties:", data?.length || 0);
-      },
-      onError: (err) => {
-        console.error("Error fetching featured properties:", err);
-        toast({
-          title: "Could not load featured properties",
-          description: "Please try again later",
-          variant: "destructive",
-        });
-      }
+    onSuccess: (data) => {
+      console.log("Successfully fetched featured properties:", data?.length || 0);
+    },
+    onError: (err) => {
+      console.error("Error fetching featured properties:", err);
+      toast({
+        title: "Could not load featured properties",
+        description: "Please try again later",
+        variant: "destructive",
+      });
     }
   });
 
@@ -56,7 +53,6 @@ const FeaturedProperties = () => {
     };
   }, []);
 
-  // Log properties data for debugging
   useEffect(() => {
     if (featuredProperties) {
       console.log("Featured properties in component:", featuredProperties);
@@ -127,7 +123,6 @@ const FeaturedProperties = () => {
               </Link>
             </Button>
           </div>
-          {/* Show all properties button even if featured ones couldn't load */}
           <div className="text-center py-16">
             <Button asChild className="mt-4 bg-teal-400 hover:bg-teal-500 text-white">
               <Link to="/properties">Browse All Properties</Link>
@@ -188,3 +183,4 @@ const FeaturedProperties = () => {
 };
 
 export default FeaturedProperties;
+
