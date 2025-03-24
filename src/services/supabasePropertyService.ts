@@ -43,7 +43,7 @@ const convertToPropertyType = (rawProperty: any): Property => {
       description: "",
       location: { city: "Unknown", country: "India" },
       price: 0,
-      currency: "INR", // Add the missing currency property
+      currency: "INR",
       images: [],
       amenities: [],
       host: createHostObject("unknown"),
@@ -68,8 +68,8 @@ const convertToPropertyType = (rawProperty: any): Property => {
     amenities: Array.isArray(rawProperty.amenities) ? rawProperty.amenities : [],
     host: createHostObject(
       rawProperty.host_id || 'unknown',
-      'Property Host', // Default name
-      undefined // Default avatar
+      rawProperty.host_name || 'Property Host',
+      rawProperty.host_avatar
     ),
     rating: typeof rawProperty.rating === 'number' ? rawProperty.rating : 4.5,
     bedrooms: typeof rawProperty.bedrooms === 'number' ? rawProperty.bedrooms : 1,
@@ -90,7 +90,8 @@ export async function fetchSupabaseProperties(filters?: SearchFilters): Promise<
     // Apply filters if provided
     if (filters) {
       if (filters.location && typeof filters.location === 'string' && filters.location.trim() !== '') {
-        query = query.ilike('location->>city', `%${filters.location}%`);
+        // Use JSON operator to search in the location object
+        query = query.textSearch('location', filters.location);
       }
       
       if (filters.guests && typeof filters.guests === 'number' && filters.guests > 0) {
@@ -145,11 +146,17 @@ export async function fetchSupabasePropertyById(id: string): Promise<Property | 
   try {
     console.log(`Fetching property with ID ${id} from Supabase`);
     
+    // Check if it's a mock property ID (they usually don't follow UUID format)
+    if (id.startsWith('prop-') || id.startsWith('extended-prop-')) {
+      console.log(`${id} appears to be a mock property ID, skipping Supabase fetch`);
+      return null; // Return null to fall back to mock data
+    }
+    
     const { data, error } = await supabase
       .from('properties')
       .select('*')
       .eq('id', id)
-      .single();
+      .maybeSingle();
     
     if (error) {
       console.error(`Error fetching property ${id}:`, error);

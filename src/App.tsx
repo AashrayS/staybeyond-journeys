@@ -12,6 +12,7 @@ import TransportPage from "./pages/TransportPage";
 import NotFound from "./pages/NotFound";
 import Auth from "./pages/Auth";
 import AddProperty from "./pages/AddProperty";
+import BecomeHost from "./pages/BecomeHost";
 import { MotionConfig } from "framer-motion";
 
 // Create a client
@@ -40,6 +41,7 @@ const App = () => {
                 <Route path="/properties/:id" element={<PropertyDetail />} />
                 <Route path="/transport" element={<TransportPage />} />
                 <Route path="/auth" element={<Auth />} />
+                <Route path="/become-host" element={<BecomeHost />} />
                 <Route 
                   path="/add-property" 
                   element={

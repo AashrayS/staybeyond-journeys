@@ -42,10 +42,16 @@ const AuthNavigation = () => {
 
   return (
     <div className="flex items-center space-x-4">
-      {isHost && (
+      {isHost ? (
         <Link to="/add-property">
           <Button variant="outline" size="sm">
             List Property
+          </Button>
+        </Link>
+      ) : (
+        <Link to="/become-host">
+          <Button variant="outline" size="sm">
+            Become a Host
           </Button>
         </Link>
       )}
@@ -70,7 +76,7 @@ const AuthNavigation = () => {
             </DropdownMenuItem>
           ) : (
             <DropdownMenuItem>
-              <Link to="/add-property" className="w-full">Become a Host</Link>
+              <Link to="/become-host" className="w-full">Become a Host</Link>
             </DropdownMenuItem>
           )}
           <DropdownMenuItem>
