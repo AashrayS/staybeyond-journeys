@@ -199,7 +199,7 @@ export const createBooking = async (bookingData: Omit<Booking, 'id'>): Promise<B
         start_date: bookingData.startDate,
         end_date: bookingData.endDate,
         total_price: bookingData.totalPrice,
-        status: bookingData.status || 'pending',
+        status: bookingData.status || "pending",
         guests: bookingData.guests || 1
       })
       .select('*')
@@ -276,16 +276,26 @@ export const createTransportation = async (transportData: Omit<Transportation, '
       return null;
     }
     
+    // Ensure type is one of the allowed values
+    const transportType = ["cab", "auto", "other"].includes(transportData.type) 
+      ? transportData.type as "cab" | "auto" | "other"
+      : "cab";
+      
+    // Ensure status is one of the allowed values
+    const transportStatus = ["pending", "confirmed", "completed", "cancelled"].includes(transportData.status || "") 
+      ? transportData.status as "pending" | "confirmed" | "completed" | "cancelled"
+      : "pending";
+    
     const { data: transportInsertData, error: transportError } = await supabase
       .from('transportation')
       .insert({
         booking_id: transportData.bookingId,
-        type: transportData.type || 'cab',
+        type: transportType,
         pickup_location: transportData.pickupLocation,
         dropoff_location: transportData.dropoffLocation,
         pickup_time: transportData.pickupTime,
         estimated_price: transportData.estimatedPrice,
-        status: transportData.status || 'pending'
+        status: transportStatus
       })
       .select('*')
       .single();
@@ -321,12 +331,12 @@ export const createTransportation = async (transportData: Omit<Transportation, '
     const savedTransportation: Transportation = {
       id: transportInsertData.id,
       bookingId: transportInsertData.booking_id,
-      type: transportInsertData.type,
+      type: transportInsertData.type as "cab" | "auto" | "other",
       pickupLocation: transportInsertData.pickup_location,
       dropoffLocation: transportInsertData.dropoff_location,
       pickupTime: transportInsertData.pickup_time,
       estimatedPrice: transportInsertData.estimated_price,
-      status: transportInsertData.status
+      status: transportInsertData.status as "pending" | "confirmed" | "completed" | "cancelled"
     };
     
     return savedTransportation;
