@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -21,12 +20,17 @@ const FeaturedProperties = () => {
     queryFn: fetchFeaturedProperties,
     staleTime: 5 * 60 * 1000, // 5 minutes
     refetchOnWindowFocus: false,
-    retry: 2, // Retry twice before giving up
-    onSuccess: (data) => {
-      console.log("Successfully fetched featured properties:", data?.length || 0);
-    }
+    retry: 2 // Retry twice before giving up
   });
 
+  // Handle success logging
+  useEffect(() => {
+    if (featuredProperties) {
+      console.log("Successfully fetched featured properties:", featuredProperties.length || 0);
+    }
+  }, [featuredProperties]);
+
+  // Handle error state
   useEffect(() => {
     if (error) {
       console.error("Error fetching featured properties:", error);
@@ -187,4 +191,3 @@ const FeaturedProperties = () => {
 };
 
 export default FeaturedProperties;
-
