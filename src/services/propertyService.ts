@@ -39,7 +39,7 @@ const filterProperties = (properties: Property[], filters?: SearchFilters): Prop
   return properties.filter(property => {
     if (filters.location && property.location && 
         typeof property.location === 'object' && 
-        property.location.city && 
+        'city' in property.location && 
         !property.location.city.toLowerCase().includes(filters.location.toLowerCase())) {
       return false;
     }
@@ -166,7 +166,13 @@ export const fetchAllLocations = async (): Promise<string[]> => {
     
     const uniqueCities = [...new Set(
       data
-        .map(item => item.location?.city)
+        .map(item => {
+          const loc = item.location;
+          if (typeof loc === 'object' && loc !== null && 'city' in loc) {
+            return loc.city;
+          }
+          return null;
+        })
         .filter(city => city && typeof city === 'string')
     )];
     
@@ -394,3 +400,4 @@ export const fetchPaginatedProperties = async (
     };
   }
 };
+
