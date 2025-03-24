@@ -1,99 +1,25 @@
 
-import { supabase } from "@/integrations/supabase/client";
-import { Property, SearchFilters } from "../types";
-
-// Helper for safely processing location data
-const processLocationData = (locationData: any): Property['location'] => {
-  if (typeof locationData === 'object' && locationData !== null) {
-    return {
-      city: typeof locationData.city === 'string' ? locationData.city : 'Unknown',
-      country: typeof locationData.country === 'string' ? locationData.country : 'India',
-      address: typeof locationData.address === 'string' ? locationData.address : undefined,
-      coordinates: locationData.coordinates ? {
-        lat: typeof locationData.coordinates.lat === 'number' ? locationData.coordinates.lat : 0,
-        lng: typeof locationData.coordinates.lng === 'number' ? locationData.coordinates.lng : 0
-      } : undefined
-    };
-  }
-  
-  return { city: 'Unknown', country: 'India' };
-};
-
-// Helper for creating a complete host object
-const createHostObject = (hostId: string, hostName?: string, hostAvatar?: string): Property['host'] => {
-  return {
-    id: hostId || 'unknown',
-    name: hostName || 'Host',
-    avatar: hostAvatar || 'https://api.dicebear.com/7.x/avataaars/svg?seed=Felix',
-    isHost: true,
-    joined: new Date().toISOString()
-  };
-};
-
-// Converts raw Supabase property to the app's Property type
-const convertToPropertyType = (rawProperty: any): Property => {
-  console.log("Converting raw property:", rawProperty);
-  
-  // Handle null or undefined properties
-  if (!rawProperty) {
-    console.error("Received null or undefined property");
-    return {
-      id: "error-" + Math.random().toString(36).substr(2, 9),
-      title: "Error Loading Property",
-      description: "",
-      location: { city: "Unknown", country: "India" },
-      price: 0,
-      currency: "INR",
-      images: [],
-      amenities: [],
-      host: createHostObject("unknown"),
-      rating: 0,
-      bedrooms: 0,
-      bathrooms: 0,
-      capacity: 0,
-      propertyType: "Unknown",
-      featured: false,
-      reviews: []
-    };
-  }
-  
-  // Log featured status to identify any issues
-  console.log(`Property ${rawProperty.id}: featured status = ${rawProperty.featured}`);
-  
-  return {
-    id: rawProperty.id || '',
-    title: rawProperty.title || 'Unnamed Property',
-    description: rawProperty.description || '',
-    location: processLocationData(rawProperty.location),
-    price: typeof rawProperty.price === 'number' ? rawProperty.price : 0,
-    currency: rawProperty.currency || 'INR',
-    images: Array.isArray(rawProperty.images) ? rawProperty.images : [],
-    amenities: Array.isArray(rawProperty.amenities) ? rawProperty.amenities : [],
-    host: createHostObject(
-      rawProperty.host_id || 'unknown',
-      rawProperty.host_name || 'Property Host',
-      rawProperty.host_avatar
-    ),
-    rating: typeof rawProperty.rating === 'number' ? rawProperty.rating : 4.5,
-    bedrooms: typeof rawProperty.bedrooms === 'number' ? rawProperty.bedrooms : 1,
-    bathrooms: typeof rawProperty.bathrooms === 'number' ? rawProperty.bathrooms : 1,
-    capacity: typeof rawProperty.capacity === 'number' ? rawProperty.capacity : 2,
-    propertyType: rawProperty.property_type || 'Apartment',
-    featured: rawProperty.featured === true, // Ensure boolean value for featured flag
-    reviews: []
-  };
-};
-
-export async function fetchSupabaseProperties(filters?: SearchFilters): Promise<Property[]> {
+// Adding a function to fetch properties with pagination
+export async function fetchPaginatedProperties(
+  page: number = 1, 
+  pageSize: number = 12, 
+  filters?: SearchFilters
+): Promise<{ properties: Property[]; total: number }> {
   try {
-    console.log("Fetching properties from Supabase with filters:", filters);
+    console.log(`Fetching paginated properties - page ${page}, size ${pageSize}`, filters);
     
-    let query = supabase.from('properties').select('*');
+    // Calculate the range for the current page
+    const from = (page - 1) * pageSize;
+    const to = from + pageSize - 1;
+    
+    // Start building the query
+    let query = supabase
+      .from('properties')
+      .select('*', { count: 'exact' });
     
     // Apply filters if provided
     if (filters) {
       if (filters.location && typeof filters.location === 'string' && filters.location.trim() !== '') {
-        // Check if location exists in the city field of the location JSONB object
         query = query.or(`location->city.ilike.%${filters.location}%,location->country.ilike.%${filters.location}%`);
       }
       
@@ -119,67 +45,34 @@ export async function fetchSupabaseProperties(filters?: SearchFilters): Promise<
       }
     }
     
-    const { data, error } = await query;
+    // Add pagination
+    query = query.range(from, to);
+    
+    // Execute the query
+    const { data, error, count } = await query;
     
     if (error) {
-      console.error("Error fetching properties from Supabase:", error);
+      console.error("Error fetching paginated properties:", error);
       throw error;
     }
     
-    console.log("Raw properties data from Supabase:", data);
-    console.log(`Fetched ${data?.length || 0} properties from Supabase`);
+    console.log(`Fetched ${data?.length || 0} properties (page ${page}) out of ${count} total`);
     
     if (!data || data.length === 0) {
-      console.log("No properties found in Supabase, falling back to mock data");
-      return []; // Allow fallback to mock data
+      console.log("No properties found in this page, returning empty array");
+      return { properties: [], total: count || 0 };
     }
     
     // Convert data to expected format
-    const properties: Property[] = data.map(convertToPropertyType);
+    const properties = data.map(convertToPropertyType);
     
-    console.log(`Successfully converted ${properties.length} properties from Supabase:`, properties);
-    return properties;
-    
-  } catch (error) {
-    console.error("Failed to fetch properties from Supabase:", error);
-    return []; // Allow fallback to mock data
-  }
-}
-
-export async function fetchSupabasePropertyById(id: string): Promise<Property | null> {
-  try {
-    console.log(`Fetching property with ID ${id} from Supabase`);
-    
-    // Check if it's a mock property ID (they usually don't follow UUID format)
-    if (id.startsWith('prop-') || id.startsWith('extended-prop-')) {
-      console.log(`${id} appears to be a mock property ID, skipping Supabase fetch`);
-      return null; // Return null to fall back to mock data
-    }
-    
-    const { data, error } = await supabase
-      .from('properties')
-      .select('*')
-      .eq('id', id)
-      .maybeSingle();
-    
-    if (error) {
-      console.error(`Error fetching property ${id}:`, error);
-      return null; // Allow fallback to mock data
-    }
-    
-    if (!data) {
-      console.log(`Property ${id} not found in Supabase`);
-      return null; // Allow fallback to mock data
-    }
-    
-    console.log(`Raw property data from Supabase:`, data);
-    
-    const property = convertToPropertyType(data);
-    console.log(`Successfully fetched property ${id} from Supabase:`, property);
-    return property;
+    return { 
+      properties, 
+      total: count || 0 
+    };
     
   } catch (error) {
-    console.error(`Failed to fetch property ${id} from Supabase:`, error);
-    return null; // Allow fallback to mock data
+    console.error("Failed to fetch paginated properties:", error);
+    return { properties: [], total: 0 };
   }
 }
