@@ -1,4 +1,3 @@
-
 import { supabase } from "@/integrations/supabase/client";
 import { Property, SearchFilters } from "@/types";
 
@@ -35,7 +34,7 @@ const convertToPropertyType = (item: any): Property => {
 };
 
 // Function to fetch all properties with optional filters
-export async function fetchProperties(filters?: SearchFilters): Promise<Property[]> {
+export const fetchProperties = async (filters?: SearchFilters): Promise<Property[]> => {
   try {
     console.log("Fetching properties from Supabase with filters:", filters);
     
@@ -93,10 +92,10 @@ export async function fetchProperties(filters?: SearchFilters): Promise<Property
     console.error("Failed to fetch properties from Supabase:", error);
     return [];
   }
-}
+};
 
 // Function to fetch a single property by ID
-export async function fetchPropertyById(id: string): Promise<Property | null> {
+export const fetchPropertyById = async (id: string): Promise<Property | null> => {
   try {
     console.log(`Fetching property ${id} from Supabase`);
     
@@ -129,10 +128,10 @@ export async function fetchPropertyById(id: string): Promise<Property | null> {
     console.error(`Failed to fetch property ${id} from Supabase:`, error);
     return null;
   }
-}
+};
 
 // Function to fetch featured properties
-export async function fetchFeaturedProperties(): Promise<Property[]> {
+export const fetchFeaturedProperties = async (): Promise<Property[]> => {
   try {
     console.log("Fetching featured properties from Supabase");
     
@@ -161,9 +160,9 @@ export async function fetchFeaturedProperties(): Promise<Property[]> {
     console.error("Failed to fetch featured properties from Supabase:", error);
     return [];
   }
-}
+};
 
-// Adding a function to fetch properties with pagination
+// Function to fetch properties with pagination
 export async function fetchPaginatedProperties(
   page: number = 1, 
   pageSize: number = 12, 

@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -23,16 +24,19 @@ const FeaturedProperties = () => {
     retry: 2, // Retry twice before giving up
     onSuccess: (data) => {
       console.log("Successfully fetched featured properties:", data?.length || 0);
-    },
-    onError: (err) => {
-      console.error("Error fetching featured properties:", err);
+    }
+  });
+
+  useEffect(() => {
+    if (error) {
+      console.error("Error fetching featured properties:", error);
       toast({
         title: "Could not load featured properties",
         description: "Please try again later",
         variant: "destructive",
       });
     }
-  });
+  }, [error, toast]);
 
   useEffect(() => {
     const handleScroll = () => {

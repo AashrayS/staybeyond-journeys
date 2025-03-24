@@ -7,7 +7,7 @@ import {
   fetchPaginatedProperties as fetchSupabasePaginatedProperties 
 } from "./supabasePropertyService";
 import { supabase } from "@/integrations/supabase/client";
-import { toast } from "@/components/ui/use-toast";
+import { useToast, toast } from "@/components/ui/use-toast";
 
 const validateProperty = (property: Property): Property => {
   if (!property.location || typeof property.location !== 'object') {
