@@ -22,15 +22,16 @@ const FeaturedProperties = () => {
     staleTime: 5 * 60 * 1000, // 5 minutes
     refetchOnWindowFocus: false,
     retry: 2, // Retry twice before giving up
-    onSettled: (data, err) => {
-      if (err) {
-        console.error("Error fetching featured properties:", err);
-        toast({
-          title: "Could not load featured properties",
-          description: "Please try again later",
-          variant: "destructive",
-        });
-      }
+    onSuccess: (data) => {
+      console.log("Successfully fetched featured properties:", data?.length || 0);
+    },
+    onError: (err) => {
+      console.error("Error fetching featured properties:", err);
+      toast({
+        title: "Could not load featured properties",
+        description: "Please try again later",
+        variant: "destructive",
+      });
     }
   });
 

@@ -1,9 +1,8 @@
-
 import { locations, properties as mockProperties, bookings as mockBookings } from "../data/mockData";
 import { Property, SearchFilters, Booking, Transportation } from "../types";
 import { 
-  fetchSupabaseProperties, 
-  fetchSupabasePropertyById, 
+  fetchProperties as fetchSupabaseProperties, 
+  fetchPropertyById as fetchSupabasePropertyById, 
   fetchFeaturedProperties as fetchSupabaseFeaturedProperties,
   fetchPaginatedProperties as fetchSupabasePaginatedProperties 
 } from "./supabasePropertyService";
@@ -38,7 +37,9 @@ const filterProperties = (properties: Property[], filters?: SearchFilters): Prop
   if (!filters) return properties;
 
   return properties.filter(property => {
-    if (filters.location && property.location?.city && 
+    if (filters.location && property.location && 
+        typeof property.location === 'object' && 
+        property.location.city && 
         !property.location.city.toLowerCase().includes(filters.location.toLowerCase())) {
       return false;
     }
@@ -191,6 +192,11 @@ export const createBooking = async (bookingData: Omit<Booking, 'id'>): Promise<B
       return null;
     }
     
+    const bookingStatus = bookingData.status || "pending";
+    const validStatus = ["pending", "confirmed", "completed", "cancelled"].includes(bookingStatus) 
+      ? bookingStatus as "pending" | "confirmed" | "completed" | "cancelled"
+      : "pending";
+    
     const { data: bookingInsertData, error: bookingError } = await supabase
       .from('bookings')
       .insert({
@@ -199,7 +205,7 @@ export const createBooking = async (bookingData: Omit<Booking, 'id'>): Promise<B
         start_date: bookingData.startDate,
         end_date: bookingData.endDate,
         total_price: bookingData.totalPrice,
-        status: bookingData.status || "pending",
+        status: validStatus,
         guests: bookingData.guests || 1
       })
       .select('*')
@@ -245,7 +251,7 @@ export const createBooking = async (bookingData: Omit<Booking, 'id'>): Promise<B
       startDate: bookingInsertData.start_date,
       endDate: bookingInsertData.end_date,
       totalPrice: bookingInsertData.total_price,
-      status: bookingInsertData.status,
+      status: bookingInsertData.status as "pending" | "confirmed" | "completed" | "cancelled",
       guests: bookingInsertData.guests,
       createdAt: bookingInsertData.created_at
     };
@@ -276,14 +282,12 @@ export const createTransportation = async (transportData: Omit<Transportation, '
       return null;
     }
     
-    // Ensure type is one of the allowed values
-    const transportType = ["cab", "auto", "other"].includes(transportData.type) 
-      ? transportData.type as "cab" | "auto" | "other"
+    const transportType = ["cab", "auto", "other"].includes(transportData.type as string) 
+      ? transportData.type 
       : "cab";
       
-    // Ensure status is one of the allowed values
-    const transportStatus = ["pending", "confirmed", "completed", "cancelled"].includes(transportData.status || "") 
-      ? transportData.status as "pending" | "confirmed" | "completed" | "cancelled"
+    const transportStatus = ["pending", "confirmed", "completed", "cancelled"].includes(transportData.status ||"pending") 
+      ? (transportData.status as "pending" | "confirmed" | "completed" | "cancelled")
       : "pending";
     
     const { data: transportInsertData, error: transportError } = await supabase

@@ -35,7 +35,7 @@ const convertToPropertyType = (item: any): Property => {
 };
 
 // Function to fetch all properties with optional filters
-export async function fetchSupabaseProperties(filters?: SearchFilters): Promise<Property[]> {
+export async function fetchProperties(filters?: SearchFilters): Promise<Property[]> {
   try {
     console.log("Fetching properties from Supabase with filters:", filters);
     
@@ -96,7 +96,7 @@ export async function fetchSupabaseProperties(filters?: SearchFilters): Promise<
 }
 
 // Function to fetch a single property by ID
-export async function fetchSupabasePropertyById(id: string): Promise<Property | null> {
+export async function fetchPropertyById(id: string): Promise<Property | null> {
   try {
     console.log(`Fetching property ${id} from Supabase`);
     
