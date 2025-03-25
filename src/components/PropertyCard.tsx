@@ -8,7 +8,7 @@ import { AspectRatio } from "@/components/ui/aspect-ratio";
 
 interface PropertyCardProps {
   property: Property;
-  featured?: boolean; // Add optional featured prop
+  featured?: boolean;
 }
 
 const PropertyCard = ({ property, featured }: PropertyCardProps) => {

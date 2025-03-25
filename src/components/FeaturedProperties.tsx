@@ -1,9 +1,9 @@
+
 import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import PropertyCard from "./PropertyCard";
 import { ChevronRight } from "lucide-react";
-import { cn } from "@/lib/utils";
 import { fetchFeaturedProperties } from "@/services/propertyService";
 import { Property } from "@/types";
 import { useQuery } from "@tanstack/react-query";
