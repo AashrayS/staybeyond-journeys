@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { useSearchParams } from "react-router-dom";
 import Header from "../components/Header";
@@ -45,6 +46,7 @@ import {
   PaginationNext,
   PaginationPrevious,
 } from "@/components/ui/pagination";
+import { toast } from "@/components/ui/use-toast";
 
 const ITEMS_PER_PAGE = 9;
 
@@ -95,6 +97,16 @@ const PropertyListing = () => {
   useEffect(() => {
     if (properties) {
       console.log("Properties before sorting:", properties);
+      if (properties.length === 0) {
+        // If no properties were returned, show a toast notification
+        toast({
+          title: "No properties found",
+          description: "Try adjusting your filters to see more properties.",
+          variant: "destructive",
+          duration: 5000,
+        });
+      }
+      
       let sorted = [...properties];
       
       switch (sortBy) {

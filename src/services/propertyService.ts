@@ -7,7 +7,7 @@ import {
   fetchPaginatedProperties as fetchSupabasePaginatedProperties 
 } from "./supabasePropertyService";
 import { supabase } from "@/integrations/supabase/client";
-import { useToast, toast } from "@/components/ui/use-toast";
+import { toast } from "@/components/ui/use-toast";
 
 const validateProperty = (property: Property): Property => {
   if (!property.location || typeof property.location !== 'object') {
@@ -93,12 +93,19 @@ export const fetchAllProperties = async (filters?: SearchFilters): Promise<Prope
     
     console.log("Falling back to mock data");
     let filteredProperties = filterProperties(mockProperties, filters);
+    
+    // Ensure we always return some properties for demo purposes
+    if (filteredProperties.length === 0 && mockProperties.length > 0) {
+      console.log("No properties matched filters, returning all mock properties");
+      filteredProperties = mockProperties;
+    }
+    
     return filteredProperties.map(validateProperty);
     
   } catch (error) {
     console.error("Error in fetchAllProperties:", error);
-    let filteredProperties = filterProperties(mockProperties, filters);
-    return filteredProperties.map(validateProperty);
+    // Always fall back to mock data in case of error
+    return mockProperties.map(validateProperty);
   }
 };
 
