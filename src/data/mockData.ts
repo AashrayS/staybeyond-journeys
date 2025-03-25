@@ -1,4 +1,3 @@
-
 import { Booking, Property, Transportation, Review } from "../types";
 import { indianUsers, indianProperties as baseIndianProperties, indianLocations, indianPropertyTypes } from "./indianData";
 
@@ -66,7 +65,7 @@ const cachedProperties = (() => {
       bathrooms: Math.floor(Math.random() * 3) + 1, // 1 to 3 bathrooms
       capacity: Math.floor(Math.random() * 8) + 1, // 1 to 8 guests
       propertyType: indianPropertyTypes[newPropTypeIndex],
-      featured: Math.random() > 0.85, // 15% chance to be featured
+      featured: Math.random() > 0.75, // Increased chance to be featured (25%)
     };
     
     // Randomize some amenities
@@ -82,6 +81,18 @@ const cachedProperties = (() => {
     
     // Add to the collection
     moreProperties.push(newProperty);
+  }
+  
+  // Ensure there are at least some featured properties
+  let hasFeatured = moreProperties.some(p => p.featured === true);
+  if (!hasFeatured) {
+    console.log("No featured properties found, marking some as featured");
+    // Mark the first 6 properties as featured
+    for (let i = 0; i < 6; i++) {
+      if (moreProperties[i]) {
+        moreProperties[i].featured = true;
+      }
+    }
   }
   
   console.timeEnd('Generate properties');

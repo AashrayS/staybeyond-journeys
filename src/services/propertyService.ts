@@ -94,7 +94,6 @@ export const fetchAllProperties = async (filters?: SearchFilters): Promise<Prope
     console.log("Falling back to mock data");
     let filteredProperties = filterProperties(mockProperties, filters);
     
-    // Ensure we always return some properties for demo purposes
     if (filteredProperties.length === 0 && mockProperties.length > 0) {
       console.log("No properties matched filters, returning all mock properties");
       filteredProperties = mockProperties;
@@ -121,13 +120,30 @@ export const fetchFeaturedProperties = async (): Promise<Property[]> => {
     }
     
     console.log("No featured properties found in Supabase, falling back to mock data");
-    const featuredProperties = mockProperties.filter(p => p.featured).slice(0, 6);
+    const featuredProperties = mockProperties.filter(p => p.featured === true);
+    
+    if (featuredProperties.length === 0) {
+      console.log("No featured properties in mock data either, marking some as featured");
+      const someProperties = mockProperties.slice(0, 6).map(p => ({
+        ...p,
+        featured: true
+      }));
+      console.log(`Marked ${someProperties.length} properties as featured`);
+      return someProperties.map(validateProperty);
+    }
+    
     console.log(`Using ${featuredProperties.length} mock featured properties`);
     return featuredProperties.map(validateProperty);
     
   } catch (error) {
     console.error("Error in fetchFeaturedProperties:", error);
     const featuredProperties = mockProperties.filter(p => p.featured).slice(0, 6);
+    if (featuredProperties.length === 0) {
+      return mockProperties.slice(0, 6).map(p => ({
+        ...p,
+        featured: true
+      })).map(validateProperty);
+    }
     return featuredProperties.map(validateProperty);
   }
 };

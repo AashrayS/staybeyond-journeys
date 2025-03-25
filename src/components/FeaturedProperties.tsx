@@ -141,6 +141,9 @@ const FeaturedProperties = () => {
     );
   }
 
+  // Check if we have featured properties to display
+  const hasFeaturedProperties = featuredProperties && featuredProperties.length > 0;
+
   return (
     <section id="featured-section" className="py-16 md:py-24 px-4 bg-gradient-to-br from-white to-teal-50 dark:from-gray-900 dark:to-teal-900/10">
       <div className="container mx-auto max-w-7xl">
@@ -164,7 +167,7 @@ const FeaturedProperties = () => {
           </Button>
         </motion.div>
 
-        {featuredProperties && featuredProperties.length > 0 ? (
+        {hasFeaturedProperties ? (
           <motion.div 
             variants={container}
             initial="hidden"
