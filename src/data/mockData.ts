@@ -1,3 +1,4 @@
+
 import { Booking, Property, Transportation, Review } from "../types";
 import { indianUsers, indianProperties as baseIndianProperties, indianLocations, indianPropertyTypes } from "./indianData";
 
@@ -28,19 +29,40 @@ export const amenitiesList = [
   "EV Charger"
 ];
 
+// Sample property images
+const samplePropertyImages = [
+  "https://images.unsplash.com/photo-1566073771259-6a8506099945?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80",
+  "https://images.unsplash.com/photo-1502672023488-70e25813eb80?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80",
+  "https://images.unsplash.com/photo-1512917774080-9991f1c4c750?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80",
+  "https://images.unsplash.com/photo-1564013799919-ab600027ffc6?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80",
+  "https://images.unsplash.com/photo-1493809842364-78817add7ffb?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80",
+  "https://images.unsplash.com/photo-1600585154340-be6161a56a0c?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80"
+];
+
 // Generate more properties based on the base properties - only do this once
 const cachedProperties = (() => {
   console.time('Generate properties');
   const moreProperties: Property[] = [];
   
-  // First include the original properties
-  moreProperties.push(...baseIndianProperties);
+  // First ensure the original base properties have images
+  const enhancedBaseProperties = baseIndianProperties.map((prop, index) => {
+    if (!prop.images || prop.images.length === 0) {
+      return {
+        ...prop,
+        images: [samplePropertyImages[index % samplePropertyImages.length]]
+      };
+    }
+    return prop;
+  });
+  
+  // Add the enhanced base properties
+  moreProperties.push(...enhancedBaseProperties);
   
   // Generate 60+ more properties based on the originals with variations
   for (let i = 0; i < 60; i++) {
     // Clone a random base property and modify it
-    const randomBaseIndex = Math.floor(Math.random() * baseIndianProperties.length);
-    const baseProp = baseIndianProperties[randomBaseIndex];
+    const randomBaseIndex = Math.floor(Math.random() * enhancedBaseProperties.length);
+    const baseProp = enhancedBaseProperties[randomBaseIndex];
     
     // Create a variation of the property
     const newLocationIndex = Math.floor(Math.random() * indianLocations.length);
@@ -66,6 +88,8 @@ const cachedProperties = (() => {
       capacity: Math.floor(Math.random() * 8) + 1, // 1 to 8 guests
       propertyType: indianPropertyTypes[newPropTypeIndex],
       featured: Math.random() > 0.75, // Increased chance to be featured (25%)
+      // Always include at least one image
+      images: [samplePropertyImages[i % samplePropertyImages.length]]
     };
     
     // Randomize some amenities

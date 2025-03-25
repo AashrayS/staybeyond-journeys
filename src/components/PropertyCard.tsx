@@ -3,8 +3,9 @@ import { Link } from "react-router-dom";
 import { Property } from "../types";
 import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Star, MapPin, BedDouble, Bath, Users } from "lucide-react";
+import { Star, MapPin, BedDouble, Bath, Users, Home } from "lucide-react";
 import { AspectRatio } from "@/components/ui/aspect-ratio";
+import { useEffect } from "react";
 
 interface PropertyCardProps {
   property: Property;
@@ -12,6 +13,17 @@ interface PropertyCardProps {
 }
 
 const PropertyCard = ({ property, featured }: PropertyCardProps) => {
+  useEffect(() => {
+    // Log property data for debugging
+    console.log("PropertyCard rendering with data:", property);
+  }, [property]);
+
+  // Early return if property is null or undefined
+  if (!property) {
+    console.error("Property card received null property data");
+    return null;
+  }
+
   // Provide fallback values for missing data
   const {
     id,
@@ -30,10 +42,19 @@ const PropertyCard = ({ property, featured }: PropertyCardProps) => {
   // Handle missing values gracefully
   const city = location?.city || "Unknown City";
   const country = location?.country || "India";
+  
+  // Use a default image if no images are available
   const defaultImageUrl = "/placeholder.svg";
   const imageUrl = images && images.length > 0 ? images[0] : defaultImageUrl;
 
-  if (!property || !id) {
+  // Provide sample images if needed (uncomment if you want to use these)
+  // const sampleImages = [
+  //   "https://images.unsplash.com/photo-1520250497591-112f2f40a3f4?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1170&q=80",
+  //   "https://images.unsplash.com/photo-1501183638710-841dd1904471?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1170&q=80"
+  // ];
+  // const imageUrl = images && images.length > 0 ? images[0] : sampleImages[Math.floor(Math.random() * sampleImages.length)];
+
+  if (!id) {
     console.warn("Property card received invalid property data:", property);
     return null;
   }
@@ -44,17 +65,22 @@ const PropertyCard = ({ property, featured }: PropertyCardProps) => {
       className="block transition-all duration-300 hover:shadow-lg rounded-xl"
     >
       <Card className={`border-purple-100 dark:border-gray-700 overflow-hidden h-full flex flex-col ${featured ? 'border-2 border-purple-300' : ''}`}>
-        <CardHeader className="p-0">
-          <AspectRatio ratio={4/3} className="bg-gray-100">
+        <CardHeader className="p-0 relative">
+          <AspectRatio ratio={4/3} className="bg-gray-100 dark:bg-gray-800">
             <img
               src={imageUrl}
               alt={title}
               className="object-cover w-full h-full rounded-t-xl"
               onError={(e) => {
-                console.log("Image error, using fallback");
+                console.log("Image error, using fallback", imageUrl);
                 (e.target as HTMLImageElement).src = defaultImageUrl;
               }}
             />
+            {imageUrl === defaultImageUrl && (
+              <div className="absolute inset-0 flex items-center justify-center">
+                <Home className="h-12 w-12 text-gray-400" />
+              </div>
+            )}
           </AspectRatio>
           {featured && (
             <Badge 

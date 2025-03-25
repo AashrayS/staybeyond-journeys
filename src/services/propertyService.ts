@@ -1,3 +1,4 @@
+
 import { locations, properties as mockProperties, bookings as mockBookings } from "../data/mockData";
 import { Property, SearchFilters, Booking, Transportation } from "../types";
 import { 
@@ -14,6 +15,13 @@ const validateProperty = (property: Property): Property => {
     property.location = { city: 'Unknown', country: 'India' };
   }
 
+  // Sample images to use as fallbacks if needed
+  const sampleImages = [
+    "https://images.unsplash.com/photo-1566073771259-6a8506099945?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80",
+    "https://images.unsplash.com/photo-1502672023488-70e25813eb80?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80",
+    "https://images.unsplash.com/photo-1512917774080-9991f1c4c750?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80"
+  ];
+
   return {
     ...property,
     id: property.id || `mock-${Math.random().toString(36).substr(2, 9)}`,
@@ -24,7 +32,10 @@ const validateProperty = (property: Property): Property => {
     bathrooms: typeof property.bathrooms === 'number' ? property.bathrooms : 1,
     capacity: typeof property.capacity === 'number' ? property.capacity : 2,
     propertyType: property.propertyType || 'Apartment',
-    images: Array.isArray(property.images) ? property.images : [],
+    // Ensure there's always at least one image
+    images: Array.isArray(property.images) && property.images.length > 0 
+      ? property.images 
+      : [sampleImages[Math.floor(Math.random() * sampleImages.length)]],
     amenities: Array.isArray(property.amenities) ? property.amenities : [],
     rating: typeof property.rating === 'number' ? property.rating : 4.0,
     featured: Boolean(property.featured),
@@ -92,19 +103,22 @@ export const fetchAllProperties = async (filters?: SearchFilters): Promise<Prope
     }
     
     console.log("Falling back to mock data");
-    let filteredProperties = filterProperties(mockProperties, filters);
+    const filteredProperties = filterProperties(mockProperties, filters);
     
     if (filteredProperties.length === 0 && mockProperties.length > 0) {
       console.log("No properties matched filters, returning all mock properties");
-      filteredProperties = mockProperties;
+      return mockProperties.map(validateProperty);
     }
     
+    console.log(`Returning ${filteredProperties.length} mock properties`);
     return filteredProperties.map(validateProperty);
     
   } catch (error) {
     console.error("Error in fetchAllProperties:", error);
     // Always fall back to mock data in case of error
-    return mockProperties.map(validateProperty);
+    const validatedMockProperties = mockProperties.map(validateProperty);
+    console.log(`Returning ${validatedMockProperties.length} mock properties after error`);
+    return validatedMockProperties;
   }
 };
 
@@ -137,13 +151,18 @@ export const fetchFeaturedProperties = async (): Promise<Property[]> => {
     
   } catch (error) {
     console.error("Error in fetchFeaturedProperties:", error);
-    const featuredProperties = mockProperties.filter(p => p.featured).slice(0, 6);
+    
+    // Always ensure we return properties even after an error
+    const featuredProperties = mockProperties.filter(p => p.featured === true);
     if (featuredProperties.length === 0) {
-      return mockProperties.slice(0, 6).map(p => ({
+      console.log("Creating featured properties after error");
+      const someProperties = mockProperties.slice(0, 6).map(p => ({
         ...p,
         featured: true
-      })).map(validateProperty);
+      }));
+      return someProperties.map(validateProperty);
     }
+    
     return featuredProperties.map(validateProperty);
   }
 };
